@@ -7,8 +7,6 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import useUser from '@/hooks/useUser';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-// We are using 'any' for the props type to bypass a persistent Next.js build issue 
-// where dynamic Client Component props are incorrectly treated as a Promise type.
 const EditCampaignPage: React.FC<any> = ({ params }) => {
   const supabase = createClientComponentClient();
   const router = useRouter();
