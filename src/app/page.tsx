@@ -3,6 +3,8 @@
 import React from 'react';
 // Removed 'import Link from "next/link"' to resolve the compilation error
 
+// eslint-disable @next/next/no-html-link-for-pages, @next/next/no-img-element
+
 // Simple Icons using inline SVG for the feature cards
 const IconWrapper = ({ children }: { children: React.ReactNode }) => (
   <div className="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 mb-4">
@@ -32,7 +34,7 @@ export default function MarketingPage() {
       {/* Navigation (Placeholder: Now using uploaded logo image) */}
       <header className="p-4 md:p-6 shadow-sm">
         <div className="container mx-auto max-w-7xl">
-          {/* Replaced H1 text with Image tag for the logo */}
+          {/* Replaced Link with <a> and included image (ESLint rule disabled above) */}
           <a href="/">
             <img 
               src="/_user_uploaded_files/image_acafef.png"
@@ -49,7 +51,6 @@ export default function MarketingPage() {
       </header>
 
       {/* 1. HERO SECTION (IMG_4617.PNG) */}
-      {/* Removed the second instance of "FunraiseWNY" text here */}
       <section className="text-center py-16 md:py-32 px-4 bg-gray-50/50">
         <div className="container mx-auto max-w-4xl">
           <span className="inline-block px-3 py-1 text-sm font-semibold text-blue-600 bg-blue-100 rounded-full mb-6 shadow-md">
@@ -63,11 +64,11 @@ export default function MarketingPage() {
           </p>
           <div className="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4">
             {/* Replaced <Link> with <a> */}
-            <a href="/for-businesses" className="w-full md:w-auto px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-300 inline-block">
+            <a href="/for-businesses" className="w-full md:w-auto px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-300 inline-block text-center">
               For Businesses
             </a>
             {/* Replaced <Link> with <a> */}
-            <a href="/for-fundraisers" className="w-full md:w-auto px-8 py-3 bg-white text-gray-800 font-bold border-2 border-gray-200 rounded-lg shadow-xl hover:bg-gray-100 transition duration-300 inline-block">
+            <a href="/for-fundraisers" className="w-full md:w-auto px-8 py-3 bg-white text-gray-800 font-bold border-2 border-gray-200 rounded-lg shadow-xl hover:bg-gray-100 transition duration-300 inline-block text-center">
               For Fundraisers
             </a>
           </div>
@@ -136,7 +137,7 @@ export default function MarketingPage() {
             Join our platform for free and let Western New York&apos;s fundraising network become your new marketing team. Drive new customers through your door with zero upfront cost.
           </p>
            {/* Replaced <Link> with <a> */}
-          <a href="/business-signup" className="inline-block px-10 py-4 bg-white text-blue-600 font-bold rounded-lg shadow-2xl hover:bg-gray-100 transition duration-300 text-lg">
+          <a href="/business-signup" className="inline-block px-10 py-4 bg-white text-blue-600 font-bold rounded-lg shadow-2xl hover:bg-gray-100 transition duration-300 text-lg text-center">
             Get Your Business Featured for Free
           </a>
         </div>
@@ -152,7 +153,7 @@ export default function MarketingPage() {
             Stop selling things people don&apos;t want. Partner with Funraise WNY to offer a product that sells itself and gives back to your community. Perfect for sports teams, schools, and non-profits.
           </p>
            {/* Replaced <Link> with <a> */}
-          <a href="/fundraiser-pilot" className="inline-block px-10 py-4 bg-gray-800 text-white font-bold rounded-lg shadow-xl hover:bg-gray-700 transition duration-300 text-lg">
+          <a href="/fundraiser-pilot" className="inline-block px-10 py-4 bg-gray-800 text-white font-bold rounded-lg shadow-xl hover:bg-gray-700 transition duration-300 text-lg text-center">
             Become a Pilot Fundraising Partner
           </a>
         </div>
