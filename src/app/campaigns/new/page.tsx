@@ -5,12 +5,6 @@ import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import useUser from '@/hooks/useUser';
 
-// Removed unnecessary imports like 'Metadata' and 'ResolvingMetadata' 
-// if they existed, based on the build log warnings.
-// Also ensuring the component accepts no props (or optional props).
-
-// The component should accept no props, as this is a static route page.
-// We remove the props definition entirely to resolve the Type error.
 export default function NewCampaignPage() { 
   const supabase = createClientComponentClient();
   const router = useRouter();
@@ -19,7 +13,7 @@ export default function NewCampaignPage() {
   const [campaignName, setCampaignName] = useState('');
   const [goalAmount, setGoalAmount] = useState('');
   const [startDate, setStartDate] = useState(''); 
-  const [endDate, setEndDate] = useState('');    
+  const [endDate, setEndDate] = useState('');     
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -34,8 +28,11 @@ export default function NewCampaignPage() {
     }
     
     setLoading(true);
-    // Destructuring 'data' as '_data' to address the unused variable warning
-    const { data: _data, error } = await supabase
+    
+    // --- THIS IS THE CORRECTED LINE ---
+    // We only need the 'error' variable from the response, so we
+    // remove 'data' entirely to fix the "unused variable" warning.
+    const { error } = await supabase
       .from('campaigns')
       .insert({
         campaign_name: campaignName,
@@ -43,9 +40,7 @@ export default function NewCampaignPage() {
         organizer_id: user.id,
         start_date: startDate || null, 
         end_date: endDate || null, 
-      })
-      .select()
-      .single();
+      });
 
     setLoading(false);
     if (error) {
@@ -72,7 +67,6 @@ export default function NewCampaignPage() {
             <label htmlFor="goalAmount" className="block text-sm font-medium text-gray-700">Fundraising Goal ($)</label>
             <input id="goalAmount" type="number" value={goalAmount} onChange={(e) => setGoalAmount(e.target.value)} placeholder="e.g., 5000" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"/>
           </div>
-          {/* --- New Date Fields --- */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Start Date</label>
@@ -83,7 +77,6 @@ export default function NewCampaignPage() {
               <input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"/>
             </div>
           </div>
-          {/* -------------------- */}
           <button
             onClick={handleCreateCampaign}
             disabled={loading}
