@@ -5,13 +5,9 @@ import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import useUser from '@/hooks/useUser';
 
-type EditCampaignPageProps = {
-  params: {
-    id: string;
-  };
-};
-
-export default function EditCampaignPage({ params }: EditCampaignPageProps) {
+// Removed the separate type definition to avoid conflict with Next.js internal PageProps type.
+// We define the expected props directly on the component function signature.
+export default function EditCampaignPage({ params }: { params: { id: string } }) {
   const supabase = createClientComponentClient();
   const router = useRouter();
   const { user, loading: userLoading } = useUser();
@@ -20,14 +16,15 @@ export default function EditCampaignPage({ params }: EditCampaignPageProps) {
   const [campaignName, setCampaignName] = useState('');
   const [goalAmount, setGoalAmount] = useState('');
   const [startDate, setStartDate] = useState(''); // <-- New state
-  const [endDate, setEndDate] = useState('');     // <-- New state
+  const [endDate, setEndDate] = useState('');    // <-- New state
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   const fetchCampaign = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const { data, error } = await supabase
+    // Destructure 'error' as '_error' to silence potential unused variable warnings
+    const { data, error: _error } = await supabase
       .from('campaigns')
       .select('*')
       .eq('id', campaignId)
@@ -35,7 +32,8 @@ export default function EditCampaignPage({ params }: EditCampaignPageProps) {
       .single();
     
     setLoading(false);
-    if (error || !data) {
+    // Use the renamed variable here, and also check for data existence
+    if (_error || !data) { 
       setMessage('Campaign not found or you do not have permission to edit it.');
       return;
     }
