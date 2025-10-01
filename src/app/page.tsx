@@ -6,7 +6,6 @@ import Link from 'next/link';
 
 /* eslint-disable @next/next/no-img-element */
 
-// Define a type for our deals to help with TypeScript
 type Deal = {
   id: number;
   title: string;
@@ -24,7 +23,8 @@ export default function HomePage() {
   useEffect(() => {
     const fetchDeals = async () => {
       setLoading(true);
-      const { data, error } = await supabase.from('deals').select(`
+      // We only use 'data' here, so we remove 'error' to fix the warning.
+      const { data } = await supabase.from('deals').select(`
         *,
         businesses ( business_name )
       `);
@@ -57,7 +57,8 @@ export default function HomePage() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-extrabold text-gray-900">Live Deals on the Platform</h2>
-            <p className="text-lg text-gray-600 mt-2">Here's a taste of the savings you'll unlock.</p>
+            {/* --- THIS IS THE CORRECTED LINE --- */}
+            <p className="text-lg text-gray-600 mt-2">Here&apos;s a taste of the savings you&apos;ll unlock.</p>
           </div>
           {loading ? (
             <p className="text-center text-gray-500">Loading deals...</p>

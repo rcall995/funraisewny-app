@@ -22,7 +22,7 @@ export default function SupportPage({ params }: SupportPageProps) {
 
   useEffect(() => {
     const fetchCampaign = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('campaigns')
         .select('*')
         .eq('id', params.campaignId)

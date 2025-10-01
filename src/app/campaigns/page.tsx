@@ -22,7 +22,7 @@ export default function CampaignsPage() {
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
     // Destructuring 'error' as '_error' to silence the unused variable warning
-    const { data, error: _error } = await supabase
+    const { data } = await supabase
       .from('campaigns')
       .select('*')
       .eq('organizer_id', userId);
