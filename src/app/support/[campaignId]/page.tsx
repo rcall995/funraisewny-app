@@ -21,10 +21,10 @@ export default function SupportPage({ params }: SupportPageProps) {
   const supabase = createClientComponentClient();
 
   const fetchCampaign = useCallback(async () => {
-    // We only need 'data', so we remove 'error' to fix the lint warning
+    // We only need 'data', so the 'error' variable is removed
     const { data } = await supabase
       .from('campaigns')
-      .select('*')
+      .select('id, campaign_name')
       .eq('id', params.campaignId)
       .single();
     
