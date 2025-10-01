@@ -3,7 +3,7 @@
 import React from 'react';
 // Removed 'import Link from "next/link"' to resolve the compilation error
 
-// eslint-disable @next/next/no-html-link-for-pages, @next/next/no-img-element
+/* eslint-disable @next/next/no-html-link-for-pages, @next/next/no-img-element */
 
 // Simple Icons using inline SVG for the feature cards
 const IconWrapper = ({ children }: { children: React.ReactNode }) => (
@@ -34,7 +34,7 @@ export default function MarketingPage() {
       {/* Navigation (Placeholder: Now using uploaded logo image) */}
       <header className="p-4 md:p-6 shadow-sm">
         <div className="container mx-auto max-w-7xl">
-          {/* Replaced Link with <a> and included image (ESLint rule disabled above) */}
+          {/* Using <a> and <img> which are now explicitly ignored by the linter */}
           <a href="/">
             <img 
               src="/_user_uploaded_files/image_acafef.png"
@@ -63,11 +63,11 @@ export default function MarketingPage() {
             The new way to raise money for your group by offering your supporters what they actually want: amazing deals at the best local spots across Western New York.
           </p>
           <div className="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4">
-            {/* Replaced <Link> with <a> */}
+            {/* Using <a> tags */}
             <a href="/for-businesses" className="w-full md:w-auto px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-300 inline-block text-center">
               For Businesses
             </a>
-            {/* Replaced <Link> with <a> */}
+            {/* Using <a> tags */}
             <a href="/for-fundraisers" className="w-full md:w-auto px-8 py-3 bg-white text-gray-800 font-bold border-2 border-gray-200 rounded-lg shadow-xl hover:bg-gray-100 transition duration-300 inline-block text-center">
               For Fundraisers
             </a>
@@ -136,7 +136,7 @@ export default function MarketingPage() {
           <p className="text-lg mb-8 opacity-90">
             Join our platform for free and let Western New York&apos;s fundraising network become your new marketing team. Drive new customers through your door with zero upfront cost.
           </p>
-           {/* Replaced <Link> with <a> */}
+           {/* Using <a> tags */}
           <a href="/business-signup" className="inline-block px-10 py-4 bg-white text-blue-600 font-bold rounded-lg shadow-2xl hover:bg-gray-100 transition duration-300 text-lg text-center">
             Get Your Business Featured for Free
           </a>
@@ -152,7 +152,7 @@ export default function MarketingPage() {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-10">
             Stop selling things people don&apos;t want. Partner with Funraise WNY to offer a product that sells itself and gives back to your community. Perfect for sports teams, schools, and non-profits.
           </p>
-           {/* Replaced <Link> with <a> */}
+           {/* Using <a> tags */}
           <a href="/fundraiser-pilot" className="inline-block px-10 py-4 bg-gray-800 text-white font-bold rounded-lg shadow-xl hover:bg-gray-700 transition duration-300 text-lg text-center">
             Become a Pilot Fundraising Partner
           </a>
