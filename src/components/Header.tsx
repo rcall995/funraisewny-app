@@ -20,7 +20,7 @@ export default function Header() {
           </Link>
           <Link href="/campaigns" className="text-gray-600 hover:text-blue-600">
             Fundraiser Dashboard
-          </A>
+          </Link> {/* <-- This was incorrectly </A> and has now been fixed */}
           <SignOutButton />
         </div>
       </nav>
