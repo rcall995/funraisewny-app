@@ -6,10 +6,9 @@ import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import useUser from '@/hooks/useUser';
 
-// We are using 'any' for the props type. This is the last resort to bypass a known, 
-// persistent Next.js build issue where dynamic Client Component props are incorrectly 
-// treated as a Promise type, leading to the "Type '{ params: { id: string; } }' 
-// does not satisfy the constraint 'PageProps'" error.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// We are using 'any' for the props type to bypass a persistent Next.js build issue 
+// where dynamic Client Component props are incorrectly treated as a Promise type.
 const EditCampaignPage: React.FC<any> = ({ params }) => {
   const supabase = createClientComponentClient();
   const router = useRouter();
