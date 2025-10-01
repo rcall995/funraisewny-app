@@ -33,6 +33,7 @@ export default function DashboardPage() {
 
   const fetchAllData = useCallback(async (user: User) => {
     // No need to set loading here, can be handled more granularly
+    // Note: No unused variable warning for profileData/dealsData as they are used to set state.
     const { data: profileData } = await supabase.from('businesses').select('*').eq('owner_id', user.id).single();
     if (profileData) {
       setProfile(profileData);
@@ -123,7 +124,8 @@ export default function DashboardPage() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-gray-500">You haven't added any deals yet. Click "Add New Deal" to get started.</p>
+                // *** FIX APPLIED HERE ***
+                <p className="text-sm text-gray-500">You haven&apos;t added any deals yet. Click &quot;Add New Deal&quot; to get started.</p>
               )
             ) : (
               // If we ARE editing a deal, show the form

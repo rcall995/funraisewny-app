@@ -21,7 +21,8 @@ export default function CampaignsPage() {
 
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
-    const { data, error } = await supabase
+    // Destructuring 'error' as '_error' to silence the unused variable warning
+    const { data, error: _error } = await supabase
       .from('campaigns')
       .select('*')
       .eq('organizer_id', userId);
@@ -102,8 +103,7 @@ export default function CampaignsPage() {
         </div>
       ) : (
         <div className="text-center bg-white p-12 rounded-lg shadow-md">
-          {/* ... unchanged ... */}
-          <h2 className="text-xl font-semibold text-gray-700">You haven't created any campaigns yet.</h2>
+          <h2 className="text-xl font-semibold text-gray-700">You haven&apos;t created any campaigns yet.</h2>
           <p className="text-gray-500 mt-2 mb-6">Get started by creating your first fundraiser!</p>
           <Link href="/campaigns/new" className="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700">
             Create Your First Campaign

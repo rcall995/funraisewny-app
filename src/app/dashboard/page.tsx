@@ -26,7 +26,9 @@ export default function DashboardPage() {
     <div className="container mx-auto p-8 text-center">
       <h1 className="text-3xl font-bold">Welcome!</h1>
       <p className="mt-4 text-gray-600">You are logged in as <strong>{user.email}</strong>.</p>
-      <p className="mt-2 text-gray-500">Choose where you'd like to go:</p>
+      {/* *** FIX APPLIED HERE: Replaced ' with &apos; ***
+      */}
+      <p className="mt-2 text-gray-500">Choose where you&apos;d like to go:</p>
       <div className="mt-8 space-y-4 md:space-y-0 md:space-x-4">
         <Link 
           href="/merchant" 
