@@ -29,14 +29,27 @@ export default function MarketingPage() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
-      {/* Navigation (Placeholder based on screenshot logo) */}
+      {/* Navigation (Placeholder: Now using uploaded logo image) */}
       <header className="p-4 md:p-6 shadow-sm">
         <div className="container mx-auto max-w-7xl">
-          <h1 className="text-2xl font-extrabold text-blue-600">FunraiseWNY</h1>
+          {/* Replaced H1 text with Image tag for the logo */}
+          <a href="/">
+            <img 
+              src="/_user_uploaded_files/image_acafef.png"
+              alt="FunraiseWNY Logo"
+              className="h-8 md:h-10 w-auto" 
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.onerror = null; 
+                target.src = "https://placehold.co/150x40/007bff/ffffff?text=FunraiseWNY";
+              }}
+            />
+          </a>
         </div>
       </header>
 
       {/* 1. HERO SECTION (IMG_4617.PNG) */}
+      {/* Removed the second instance of "FunraiseWNY" text here */}
       <section className="text-center py-16 md:py-32 px-4 bg-gray-50/50">
         <div className="container mx-auto max-w-4xl">
           <span className="inline-block px-3 py-1 text-sm font-semibold text-blue-600 bg-blue-100 rounded-full mb-6 shadow-md">
