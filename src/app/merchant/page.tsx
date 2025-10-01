@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { User } from '@supabase/supabase-js';
-// No longer need to import SignOutButton here
 import BusinessProfileForm from './BusinessProfileForm';
 import DealForm from './DealForm';
 
@@ -21,7 +20,7 @@ type Deal = {
   fine_print: string | null;
 };
 
-export default function MerchantDashboardPage() { // Renamed for clarity
+export default function MerchantDashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -65,7 +64,6 @@ export default function MerchantDashboardPage() { // Renamed for clarity
     return <div className="p-8 text-center">Loading your merchant data...</div>;
   }
 
-  // The main page content starts here, without the redundant header elements
   return (
     <div className="container mx-auto p-8">
       {/* Business Profile Section */}
@@ -112,7 +110,8 @@ export default function MerchantDashboardPage() { // Renamed for clarity
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-gray-500">You haven't added any deals yet. Click "Add New Deal" to get started.</p>
+              // --- CORRECTED LINE ---
+              <p className="text-sm text-gray-500">You haven&apos;t added any deals yet. Click &quot;Add New Deal&quot; to get started.</p>
             )
           ) : (
             <DealForm 

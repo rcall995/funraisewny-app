@@ -53,7 +53,6 @@ export default function CampaignsPage() {
 
   return (
     <div className="container mx-auto p-8">
-      {/* The main <h1> title has been removed to rely on the global header */}
       {campaigns.length > 0 ? (
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="flex justify-between items-center mb-4">
@@ -83,7 +82,8 @@ export default function CampaignsPage() {
         </div>
       ) : (
         <div className="text-center bg-white p-12 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold text-gray-700">You haven't created any campaigns yet.</h2>
+          {/* --- CORRECTED LINE --- */}
+          <h2 className="text-xl font-semibold text-gray-700">You haven&apos;t created any campaigns yet.</h2>
           <p className="text-gray-500 mt-2 mb-6">Get started by creating your first fundraiser!</p>
           <Link href="/campaigns/new" className="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700">
             Create Your First Campaign
