@@ -28,13 +28,11 @@ export default function MarketingPage() {
       <section className="text-center py-16 md:py-24 px-4 bg-gray-50/50">
         <div className="container mx-auto max-w-4xl">
           
-          {/* --- LOGO ADDED HERE --- */}
           <img
-            src="/image_acafef.png" // Assumes the image is in your 'public' folder
+            src="/image_acafef.png"
             alt="FunraiseWNY Logo"
-            className="h-12 md:h-16 w-auto mx-auto mb-8" // Centered with margin-bottom
+            className="h-16 md:h-20 w-auto mx-auto mb-8" // Increased height (e.g., from h-12/h-16 to h-16/h-20)
           />
-          {/* ----------------------- */}
           
           <span className="inline-block px-3 py-1 text-sm font-semibold text-blue-600 bg-blue-100 rounded-full mb-6 shadow-md">
             Launching Soon!

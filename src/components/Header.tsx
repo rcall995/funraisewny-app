@@ -11,16 +11,12 @@ export default function Header() {
           <img 
             src="/image_acafef.png" // Assumes the image is in your 'public' folder
             alt="FunraiseWNY Logo"
-            className="h-8 w-auto"
+            className="h-10 w-auto" // Increased height from h-8 to h-10
           />
         </Link>
         <div className="flex items-center space-x-4">
-          <Link href="/merchant" className="text-gray-600 hover:text-blue-600">
-            Merchant Dashboard
-          </Link>
-          <Link href="/campaigns" className="text-gray-600 hover:text-blue-600">
-            Fundraiser Dashboard
-          </Link> {/* <-- This was incorrectly </A> and has now been fixed */}
+          {/* Dashboard links have been removed for a cleaner look */}
+          {/* We can add a conditional "Dashboard" link here later if a user is logged in */}
           <SignOutButton />
         </div>
       </nav>
