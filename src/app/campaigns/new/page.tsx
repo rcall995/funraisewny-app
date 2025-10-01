@@ -13,7 +13,7 @@ export default function NewCampaignPage() {
   const [campaignName, setCampaignName] = useState('');
   const [goalAmount, setGoalAmount] = useState('');
   const [startDate, setStartDate] = useState(''); // <-- New state
-  const [endDate, setEndDate] = useState('');     // <-- New state
+  const [endDate, setEndDate] = useState('');    // <-- New state
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -28,7 +28,8 @@ export default function NewCampaignPage() {
     }
     
     setLoading(true);
-    const { data, error } = await supabase
+    // Fix: Destructure 'data' as '_data' to suppress the unused variable warning
+    const { data: _data, error } = await supabase
       .from('campaigns')
       .insert({
         campaign_name: campaignName,
