@@ -4,9 +4,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { User } from '@supabase/supabase-js';
-import SignOutButton from '@/components/SignOutButton';
+// No longer need to import SignOutButton here
 import BusinessProfileForm from './BusinessProfileForm';
-import DealForm from './DealForm'; // <-- Updated import name
+import DealForm from './DealForm';
 
 type BusinessProfile = {
   id: number;
@@ -21,19 +21,18 @@ type Deal = {
   fine_print: string | null;
 };
 
-export default function DashboardPage() {
+export default function MerchantDashboardPage() { // Renamed for clarity
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [editingDeal, setEditingDeal] = useState<Deal | 'new' | null>(null); // <-- State to manage deal form
+  const [editingDeal, setEditingDeal] = useState<Deal | 'new' | null>(null);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
   const fetchAllData = useCallback(async (user: User) => {
-    // No need to set loading here, can be handled more granularly
-    // Note: No unused variable warning for profileData/dealsData as they are used to set state.
+    setLoading(true);
     const { data: profileData } = await supabase.from('businesses').select('*').eq('owner_id', user.id).single();
     if (profileData) {
       setProfile(profileData);
@@ -63,82 +62,68 @@ export default function DashboardPage() {
   }
   
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center"><p>Loading...</p></div>;
+    return <div className="p-8 text-center">Loading your merchant data...</div>;
   }
 
+  // The main page content starts here, without the redundant header elements
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-8">
-      <div className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-md">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Merchant Dashboard</h1>
-            {user && <p className="text-gray-600">Logged in as: <strong>{user.email}</strong></p>}
-          </div>
-          <SignOutButton />
-        </div>
-        
-        <hr className="my-6" />
-
-        {/* Business Profile Section */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-700">Your Business Profile</h2>
-            {profile && !isEditingProfile && (
-              <button onClick={() => setIsEditingProfile(true)} className="text-sm font-medium text-blue-600 hover:text-blue-800">Edit Profile</button>
-            )}
-          </div>
-          {!profile || isEditingProfile ? (
-            <BusinessProfileForm user={user!} onSave={handleFormSave} initialData={profile} />
-          ) : (
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <p><strong>Business Name:</strong> {profile.business_name}</p>
-              <p><strong>Address:</strong> {profile.address}</p>
-              <p><strong>Phone:</strong> {profile.phone}</p>
-            </div>
+    <div className="container mx-auto p-8">
+      {/* Business Profile Section */}
+      <div className="mb-8 bg-white p-6 rounded-lg shadow-md">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-gray-800">Your Business Profile</h2>
+          {profile && !isEditingProfile && (
+            <button onClick={() => setIsEditingProfile(true)} className="text-sm font-medium text-blue-600 hover:text-blue-800">Edit Profile</button>
           )}
         </div>
 
-        {/* Deals Section - only shown if a profile exists and we are NOT editing the profile */}
-        {profile && !isEditingProfile && (
-          <div>
-            <hr className="my-6" />
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-700">Your Deals</h2>
-              {editingDeal === null && (
-                <button onClick={() => setEditingDeal('new')} className="text-sm font-medium text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-md">Add New Deal</button>
-              )}
-            </div>
-            
-            {editingDeal === null ? (
-              // If we are NOT editing a deal, show the list of deals
-              deals.length > 0 ? (
-                <ul className="space-y-3">
-                  {deals.map((deal) => (
-                    <li key={deal.id} className="p-3 bg-slate-50 rounded-lg flex justify-between items-center">
-                      <div>
-                        <h3 className="font-semibold">{deal.title}</h3>
-                        <p className="text-sm text-gray-600">{deal.description}</p>
-                      </div>
-                      <button onClick={() => setEditingDeal(deal)} className="text-sm font-medium text-blue-600 hover:text-blue-800 ml-4">Edit</button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                // *** FIX APPLIED HERE ***
-                <p className="text-sm text-gray-500">You haven&apos;t added any deals yet. Click &quot;Add New Deal&quot; to get started.</p>
-              )
-            ) : (
-              // If we ARE editing a deal, show the form
-              <DealForm 
-                businessId={profile.id} 
-                onSave={handleFormSave}
-                onCancel={() => setEditingDeal(null)}
-                initialData={editingDeal === 'new' ? null : editingDeal}
-              />
-            )}
+        {!profile || isEditingProfile ? (
+          <BusinessProfileForm user={user!} onSave={handleFormSave} initialData={profile} />
+        ) : (
+          <div className="p-4 bg-slate-50 rounded-lg">
+            <p><strong>Business Name:</strong> {profile.business_name}</p>
+            <p><strong>Address:</strong> {profile.address}</p>
+            <p><strong>Phone:</strong> {profile.phone}</p>
           </div>
         )}
       </div>
+
+      {/* Deals Section */}
+      {profile && !isEditingProfile && (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-800">Your Deals</h2>
+            {editingDeal === null && (
+              <button onClick={() => setEditingDeal('new')} className="text-sm font-medium text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-md shadow">Add New Deal</button>
+            )}
+          </div>
+          
+          {editingDeal === null ? (
+            deals.length > 0 ? (
+              <ul className="space-y-3">
+                {deals.map((deal) => (
+                  <li key={deal.id} className="p-3 bg-slate-50 rounded-lg flex justify-between items-center">
+                    <div>
+                      <h3 className="font-semibold">{deal.title}</h3>
+                      <p className="text-sm text-gray-600">{deal.description}</p>
+                    </div>
+                    <button onClick={() => setEditingDeal(deal)} className="text-sm font-medium text-blue-600 hover:text-blue-800 ml-4">Edit</button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-500">You haven't added any deals yet. Click "Add New Deal" to get started.</p>
+            )
+          ) : (
+            <DealForm 
+              businessId={profile.id} 
+              onSave={handleFormSave}
+              onCancel={() => setEditingDeal(null)}
+              initialData={editingDeal === 'new' ? null : editingDeal}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }

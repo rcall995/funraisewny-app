@@ -9,8 +9,8 @@ type Campaign = {
   id: number;
   campaign_name: string;
   goal_amount: number;
-  start_date: string | null; // <-- Add dates to type
-  end_date: string | null;   // <-- Add dates to type
+  start_date: string | null;
+  end_date: string | null;
 };
 
 export default function CampaignsPage() {
@@ -21,15 +21,8 @@ export default function CampaignsPage() {
 
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
-    // Destructuring 'error' as '_error' to silence the unused variable warning
-    const { data } = await supabase
-      .from('campaigns')
-      .select('*')
-      .eq('organizer_id', userId);
-    
-    if (data) {
-      setCampaigns(data);
-    }
+    const { data } = await supabase.from('campaigns').select('*').eq('organizer_id', userId);
+    if (data) setCampaigns(data);
     setLoading(false);
   }, [supabase]);
 
@@ -37,20 +30,12 @@ export default function CampaignsPage() {
     if (user) {
       fetchCampaigns(user.id);
     }
-    if (!user && !userLoading) {
-      setLoading(false);
-    }
+    if (!user && !userLoading) setLoading(false);
   }, [user, userLoading, fetchCampaigns]);
 
-  // Helper to format dates nicely
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'UTC', // Use UTC to avoid timezone shift issues
-    });
+    return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
   };
 
   if (loading || userLoading) {
@@ -68,42 +53,37 @@ export default function CampaignsPage() {
 
   return (
     <div className="container mx-auto p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Your Fundraising Campaigns</h1>
-        <Link href="/campaigns/new" className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">
-          + New Campaign
-        </Link>
-      </div>
-      
+      {/* The main <h1> title has been removed to rely on the global header */}
       {campaigns.length > 0 ? (
         <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Your Fundraising Campaigns</h2>
+              <Link href="/campaigns/new" className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 shadow">
+                + New Campaign
+              </Link>
+          </div>
           <ul className="space-y-4">
             {campaigns.map((campaign) => (
-              <li key={campaign.id} className="border-b pb-4 last:border-b-0 flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-semibold">{campaign.campaign_name}</h2>
-                  <p className="text-gray-600">Goal: ${campaign.goal_amount.toLocaleString()}</p>
-                  {/* --- Display Dates --- */}
-                  <div className="text-sm text-gray-500 mt-1">
-                    <span>Starts: {formatDate(campaign.start_date)}</span>
-                    <span className="mx-2">|</span>
-                    <span>Ends: {formatDate(campaign.end_date)}</span>
+              <li key={campaign.id} className="border-t pt-4 first:border-t-0 first:pt-0">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-semibold">{campaign.campaign_name}</h3>
+                    <p className="text-gray-600">Goal: ${campaign.goal_amount.toLocaleString()}</p>
+                    <div className="text-sm text-gray-500 mt-1">
+                      <span>{formatDate(campaign.start_date)}</span> - <span>{formatDate(campaign.end_date)}</span>
+                    </div>
                   </div>
-                  {/* ----------------- */}
+                  <Link href={`/campaigns/${campaign.id}/edit`} className="text-sm font-medium text-blue-600 hover:text-blue-800">
+                    Edit
+                  </Link>
                 </div>
-                <Link 
-                  href={`/campaigns/${campaign.id}/edit`} 
-                  className="text-sm font-medium text-blue-600 hover:text-blue-800"
-                >
-                  Edit
-                </Link>
               </li>
             ))}
           </ul>
         </div>
       ) : (
         <div className="text-center bg-white p-12 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold text-gray-700">You haven&apos;t created any campaigns yet.</h2>
+          <h2 className="text-xl font-semibold text-gray-700">You haven't created any campaigns yet.</h2>
           <p className="text-gray-500 mt-2 mb-6">Get started by creating your first fundraiser!</p>
           <Link href="/campaigns/new" className="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700">
             Create Your First Campaign
