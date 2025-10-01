@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+// Removed 'use' hook import which is illegal in Client Components
+import { useState, useEffect, useCallback } from 'react'; 
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import useUser from '@/hooks/useUser';
 
-// Removed the separate type definition to avoid conflict with Next.js internal PageProps type.
-// We define the expected props directly on the component function signature.
-export default function EditCampaignPage({ params }: { params: { id: string } }) {
+// Define the component using the React.FC pattern to stabilize prop typing
+const EditCampaignPage: React.FC<{ params: { id: string } }> = ({ params }) => {
   const supabase = createClientComponentClient();
   const router = useRouter();
   const { user, loading: userLoading } = useUser();
+  
+  // Directly access the parameter. The client side expects the promise to be resolved.
   const campaignId = params.id;
 
   const [campaignName, setCampaignName] = useState('');
@@ -23,8 +25,8 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
   const fetchCampaign = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    // Destructure 'error' as '_error' to silence potential unused variable warnings
-    const { data, error: _error } = await supabase
+
+    const { data, error } = await supabase
       .from('campaigns')
       .select('*')
       .eq('id', campaignId)
@@ -32,8 +34,15 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
       .single();
     
     setLoading(false);
-    // Use the renamed variable here, and also check for data existence
-    if (_error || !data) { 
+
+    // Explicitly check for error and handle the message if the query fails
+    if (error) { 
+      setMessage('Error fetching campaign: ' + error.message);
+      return;
+    }
+    
+    // Check if data was returned but was empty (i.e., not found or no permission)
+    if (!data) { 
       setMessage('Campaign not found or you do not have permission to edit it.');
       return;
     }
@@ -120,4 +129,6 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
       </div>
     </div>
   );
-}
+};
+
+export default EditCampaignPage;
