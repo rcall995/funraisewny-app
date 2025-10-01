@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 
@@ -20,21 +20,23 @@ export default function SupportPage({ params }: SupportPageProps) {
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
 
-  useEffect(() => {
-    const fetchCampaign = async () => {
-      const { data } = await supabase
-        .from('campaigns')
-        .select('*')
-        .eq('id', params.campaignId)
-        .single();
-      
-      if(data) {
-        setCampaign(data);
-      }
-      setLoading(false);
-    };
-    fetchCampaign();
+  const fetchCampaign = useCallback(async () => {
+    // We only need 'data', so we remove 'error' to fix the lint warning
+    const { data } = await supabase
+      .from('campaigns')
+      .select('*')
+      .eq('id', params.campaignId)
+      .single();
+    
+    if(data) {
+      setCampaign(data);
+    }
+    setLoading(false);
   }, [supabase, params.campaignId]);
+
+  useEffect(() => {
+    fetchCampaign();
+  }, [fetchCampaign]);
   
   if (loading) {
     return <div className="p-8 text-center">Loading campaign...</div>;
