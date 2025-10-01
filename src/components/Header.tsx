@@ -1,28 +1,30 @@
-export const dynamic = 'force-dynamic';
+'use client';
+
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server'; // We'll use the server client here
+import useUser from '@/hooks/useUser';
 import SignOutButton from '@/components/SignOutButton';
 
 /* eslint-disable @next/next/no-img-element */
 
-// This is now an async Server Component
-export default async function Header() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export default function Header() {
+  const { user, loading } = useUser();
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <nav className="container mx-auto px-6 py-3 flex justify-between items-center">
         <Link href="/">
           <img 
-            src="/image_acafef.png" // Assumes image is in 'public' folder
+            src="/image_acafef.png"
             alt="FunraiseWNY Logo"
             className="h-10 w-auto"
           />
         </Link>
         <div className="flex items-center space-x-4">
-          {user ? (
-            // If user is logged in, show these links
+          {/* While loading, we can show a placeholder or nothing */}
+          {loading ? (
+            <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+          ) : user ? (
+            // If user is logged in
             <>
               <Link href="/dashboard" className="text-gray-600 hover:text-blue-600 font-medium">
                 Dashboard
@@ -30,7 +32,7 @@ export default async function Header() {
               <SignOutButton />
             </>
           ) : (
-            // If user is logged out, show these links
+            // If user is logged out
             <>
               <Link href="/login" className="text-gray-600 hover:text-blue-600 font-medium">
                 Login
