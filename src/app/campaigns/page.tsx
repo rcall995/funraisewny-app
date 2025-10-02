@@ -100,23 +100,23 @@ export default function CampaignsPage() {
           </ul>
         </div>
       ) : (
-        // --- NEW ONBOARDING VIEW FOR FIRST-TIME FUNDRAISERS ---
+        // --- ONBOARDING VIEW WITH CORRECTED TEXT ---
         <div className="text-center bg-white p-12 rounded-lg shadow-md max-w-3xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900">Welcome to the Fundraiser Portal!</h1>
-          <p className="text-gray-600 mt-2 mb-8">Let's get your first campaign up and running in a few simple steps.</p>
+          <p className="text-gray-600 mt-2 mb-8">Let&apos;s get your first campaign up and running in a few simple steps.</p>
           
           <div className="text-left space-y-4 my-8 border-l-2 border-gray-200 pl-6">
             <div>
               <h3 className="font-bold text-lg">1. Create Your Campaign</h3>
-              <p className="text-gray-600">Click the button below to set a name, goal, and date for your fundraiser.</p>
+              <p className="text-gray-600">Click the button below to set up your fundraiser&apos;s page.</p>
             </div>
             <div>
               <h3 className="font-bold text-lg">2. Share Your Unique Link</h3>
-              <p className="text-gray-600">We'll generate a special link for your campaign that you can share via email, text, and social media.</p>
+              <p className="text-gray-600">We&apos;ll generate a special link for your campaign that you can share via email, text, and social media.</p>
             </div>
             <div>
               <h3 className="font-bold text-lg">3. Raise Money</h3>
-              <p className="text-gray-600">Supporters purchase a membership through your link, and a large portion of the proceeds goes directly to your group. It's that simple!</p>
+              <p className="text-gray-600">Supporters purchase a membership, and a large portion of the proceeds goes directly to your group. It&apos;s that simple!</p>
             </div>
           </div>
 
