@@ -5,7 +5,14 @@ import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import useUser from '@/hooks/useUser';
 
-const generateSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+// A helper function to create a URL-friendly slug
+const generateSlug = (name: string) => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // remove special characters
+    .replace(/\s+/g, '-')          // replace spaces with hyphens
+    .replace(/-+/g, '-');          // remove multiple hyphens
+};
 
 export default function NewCampaignPage() {
   const supabase = createClientComponentClient();
@@ -18,7 +25,7 @@ export default function NewCampaignPage() {
   const [goalAmount, setGoalAmount] = useState('');
   const [startDate, setStartDate] = useState(''); 
   const [endDate, setEndDate] = useState('');
-  const [logoFile, setLogoFile] = useState<File | null>(null); // State for the file itself
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -44,7 +51,6 @@ export default function NewCampaignPage() {
     setLoading(true);
     let logoUrl: string | null = null;
 
-    // --- NEW UPLOAD LOGIC ---
     if (logoFile) {
       const fileName = `${user.id}-${Date.now()}-${logoFile.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -57,14 +63,12 @@ export default function NewCampaignPage() {
         return;
       }
       
-      // Get the public URL of the uploaded file
       const { data: urlData } = supabase.storage
         .from('campaign-logos')
         .getPublicUrl(fileName);
       
       logoUrl = urlData.publicUrl;
     }
-    // -----------------------
 
     const { error } = await supabase.from('campaigns').insert({
       campaign_name: campaignName,
@@ -74,7 +78,7 @@ export default function NewCampaignPage() {
       organizer_id: user.id,
       start_date: startDate || null,
       end_date: endDate || null,
-      logo_url: logoUrl, // <-- Save the new logo URL
+      logo_url: logoUrl,
     });
 
     setLoading(false);
@@ -94,13 +98,15 @@ export default function NewCampaignPage() {
       <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
         <h1 className="text-2xl font-bold mb-6">Start a New Fundraiser</h1>
         <div className="space-y-4">
-          {/* ... other form fields are the same ... */}
           <div>
             <label htmlFor="campaignName" className="block text-sm font-medium text-gray-700">Campaign Name</label>
             <input id="campaignName" type="text" value={campaignName} onChange={handleCampaignNameChange} placeholder="e.g., Spring 2025 Football Season" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
           </div>
           <div>
               <label htmlFor="slug" className="block text-sm font-medium text-gray-700">Shareable Link Name</label>
+              {/* --- NEW SUGGESTION TEXT --- */}
+              <p className="text-xs text-gray-500 mt-1">Keep it short and simple. This will be part of your public URL.</p>
+              {/* ------------------------- */}
               <div className="flex items-center mt-1">
                   <span className="text-gray-500 text-sm bg-gray-100 p-2 rounded-l-md border border-r-0">funraisewny.com/support/</span>
                   <input id="slug" type="text" value={slug} onChange={(e) => setSlug(generateSlug(e.target.value))} className="block w-full px-3 py-2 border border-gray-300 rounded-r-md shadow-sm"/>
@@ -110,14 +116,10 @@ export default function NewCampaignPage() {
             <label htmlFor="description" className="block text-sm font-medium text-gray-700">Your Story</label>
             <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={4} placeholder="Tell your supporters why you&apos;re raising money." className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
           </div>
-
-          {/* --- NEW FILE INPUT --- */}
           <div>
             <label htmlFor="logo" className="block text-sm font-medium text-gray-700">Team Logo (Optional)</label>
             <input id="logo" type="file" onChange={handleFileChange} accept="image/png, image/jpeg" className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
           </div>
-          {/* -------------------- */}
-          
           <div>
             <label htmlFor="goalAmount" className="block text-sm font-medium text-gray-700">Fundraising Goal ($)</label>
             <input id="goalAmount" type="number" value={goalAmount} onChange={(e) => setGoalAmount(e.target.value)} placeholder="e.g., 5000" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
