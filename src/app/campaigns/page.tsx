@@ -50,11 +50,7 @@ export default function CampaignsPage() {
     });
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
-  };
-  
+   
   const shareOnFacebook = (campaign: Campaign) => {
     const shareUrl = `${window.location.origin}/support/${campaign.slug}`;
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
