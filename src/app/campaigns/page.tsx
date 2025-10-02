@@ -31,16 +31,21 @@ export default function CampaignsPage() {
 
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
-    const { data: campaignsData, error: campaignsError } = await supabase.from('campaigns').select('*').eq('organizer_id', userId).eq('status', view);
+    const { data: campaignsData, error: campaignsError } = await supabase
+      .from('campaigns').select('*').eq('organizer_id', userId).eq('status', view);
+
     if (campaignsError || !campaignsData || campaignsData.length === 0) {
       setCampaigns([]); setLoading(false); return;
     }
+
     const campaignIds = campaignsData.map(c => c.id);
     const { data: membershipsData } = await supabase.from('memberships').select('*, profiles (full_name, email)').in('campaign_id', campaignIds);
+
     const campaignsWithMemberships = campaignsData.map(campaign => ({
       ...campaign,
       memberships: membershipsData ? membershipsData.filter(m => m.campaign_id === campaign.id) : [],
     }));
+
     setCampaigns(campaignsWithMemberships as Campaign[]);
     setLoading(false);
   }, [supabase, view]);
@@ -77,6 +82,16 @@ export default function CampaignsPage() {
     const text = `Support our fundraiser for ${campaign.campaign_name}! #funraisewny`;
     const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
     window.open(twitterUrl, '_blank');
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    });
   };
 
   if (loading || userLoading) {
@@ -124,6 +139,9 @@ export default function CampaignsPage() {
                   <div>
                     <h2 className="text-2xl font-semibold">{campaign.campaign_name}</h2>
                     <p className="text-sm text-gray-500 mt-1">Goal: ${campaign.goal_amount.toLocaleString()}</p>
+                    <div className="text-xs text-gray-400 mt-2 font-medium">
+                      <span>{formatDate(campaign.start_date)}</span> - <span>{formatDate(campaign.end_date)}</span>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-4">
                     {campaign.status === 'active' && (<Link href={`/campaigns/${campaign.id}/edit`} className="text-sm font-medium text-blue-600 hover:text-blue-800">Edit</Link>)}
