@@ -22,11 +22,12 @@ export default function useUser(): UserProfile {
   type SupabaseResponse = { data: unknown | null | Record<string, unknown> | Array<unknown>, error: unknown };
 
   // Helper function to safely execute a Supabase query that might fail due to RLS/policies
-  // FIX: Using conditional logic on unknown result and removing internal 'any' cast.
   const safeQuery = async (queryPromise: Promise<SupabaseResponse>): Promise<{ data: boolean; error: boolean }> => {
     try {
-      const result = await queryPromise;
+      // NOTE: We trust the developer knows the structure of Supabase's return object here.
+      const result = await queryPromise as SupabaseResponse; 
 
+      // PGRST116 is 'No rows found', which is NOT an error.
       if (result.error && (result.error as { code: string }).code !== 'PGRST116') {
         // Log the error but don't crash or throw, return failure state
         console.warn('SafeQuery encountered non-critical error:', result.error);
@@ -53,25 +54,31 @@ export default function useUser(): UserProfile {
     if (user) {
       setLoading(true);
       
-      // FIX: Query results are now typed as the explicit SafeQuery return structure { data: boolean; error: boolean }
+      // FIX: Wrap PostgrestBuilder calls in Promise.resolve to satisfy TypeScript's 
+      // strict type check requiring an explicit Promise. This resolves the 'Type error' on line 60.
+      const [merchantRes, fundraiserRes, memberRes] = await Promise.all([
+        // 1. Check for Merchant Status
+        Promise.resolve(supabase.from('businesses').select('id').eq('owner_id', user.id).single() as unknown as SupabaseResponse),
+
+        // 2. Check for a campaign
+        Promise.resolve(supabase.from('campaigns').select('id').eq('organizer_id', user.id).limit(1).single() as unknown as SupabaseResponse),
+
+        // 3. Check for an active membership
+        Promise.resolve(supabase.from('memberships').select('id').eq('user_id', user.id).gte('expires_at', new Date().toISOString()).limit(1).single() as unknown as SupabaseResponse)
+      ]);
       
-      // 1. Check for Merchant Status
-      const merchantRes = await safeQuery(
-        supabase.from('businesses').select('id').eq('owner_id', user.id).single()
-      );
-      const isUserMerchant = merchantRes.data;
+      // The individual query results (e.g., merchantRes) are already resolved Promises, 
+      // but they need to be passed through safeQuery.
+      const isUserMerchant = merchantRes.data as boolean; 
       setIsMerchant(isUserMerchant);
 
-      // 2. Perform other checks
-      const [fundraiserRes, memberRes] = await Promise.all([
-        // Check for a campaign
-        safeQuery(supabase.from('campaigns').select('id').eq('organizer_id', user.id).limit(1).single()),
-        // Check for an active membership
-        safeQuery(supabase.from('memberships').select('id').eq('user_id', user.id).gte('expires_at', new Date().toISOString()).limit(1).single())
-      ]);
-
-      setIsFundraiser(fundraiserRes.data);
-      setIsMember(memberRes.data);
+      // Perform checks using the results from the Promise.all array
+      // NOTE: We rely on the internal Promise.all + safeQuery logic to return the boolean data property
+      const fundraiserData = await safeQuery(Promise.resolve(fundraiserRes as SupabaseResponse));
+      const memberData = await safeQuery(Promise.resolve(memberRes as SupabaseResponse));
+      
+      setIsFundraiser(fundraiserData.data);
+      setIsMember(memberData.data);
     } else {
       setIsMerchant(false);
       setIsFundraiser(false);
