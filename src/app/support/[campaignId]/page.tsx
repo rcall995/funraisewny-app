@@ -3,42 +3,70 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
-import { useParams } from 'next/navigation'; // <-- Import the new hook
+import { useParams, useRouter } from 'next/navigation';
+import useUser from '@/hooks/useUser';
 
 type Campaign = {
   id: number;
   campaign_name: string;
 };
 
-// Note: We no longer need the 'SupportPageProps' type
 export default function SupportPage() {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClientComponentClient();
+  const [processing, setProcessing] = useState(false); // For the button
   
-  // Use the hook to get the params from the URL
+  const supabase = createClientComponentClient();
+  const router = useRouter();
   const params = useParams();
+  const { user } = useUser();
   const campaignId = params.campaignId;
 
-  const fetchCampaign = useCallback(async () => {
-    if (!campaignId) return; // Don't run if the ID isn't available yet
-
-    const { data } = await supabase
-      .from('campaigns')
-      .select('id, campaign_name')
-      .eq('id', campaignId)
-      .single();
-    
-    if(data) {
-      setCampaign(data);
-    }
-    setLoading(false);
-  }, [supabase, campaignId]);
-
+  // Fetch the campaign data
   useEffect(() => {
+    const fetchCampaign = async () => {
+      if (!campaignId) return;
+      const { data } = await supabase
+        .from('campaigns')
+        .select('id, campaign_name')
+        .eq('id', campaignId)
+        .single();
+      
+      if(data) setCampaign(data);
+      setLoading(false);
+    };
     fetchCampaign();
-  }, [fetchCampaign]);
+  }, [supabase, campaignId]);
   
+  const handlePurchase = async () => {
+    // 1. Check if user is logged in
+    if (!user) {
+      // If not logged in, redirect to the login page.
+      // We'll also pass a 'redirect_to' query param so we can come back here after login.
+      router.push(`/login?redirect_to=/support/${campaignId}`);
+      return;
+    }
+
+    // 2. Simulate the purchase
+    setProcessing(true);
+    const expires_at = new Date();
+    expires_at.setFullYear(expires_at.getFullYear() + 1); // Membership expires in 1 year
+
+    const { error } = await supabase.from('memberships').insert({
+      user_id: user.id,
+      campaign_id: campaignId,
+      expires_at: expires_at.toISOString(),
+    });
+
+    if (error) {
+      alert('Error: Could not complete your membership. Please try again.');
+      setProcessing(false);
+    } else {
+      // 3. On success, redirect to a thank you page
+      router.push('/support/thank-you');
+    }
+  };
+
   if (loading) {
     return <div className="p-8 text-center">Loading campaign...</div>;
   }
@@ -63,8 +91,12 @@ export default function SupportPage() {
             <span className="text-5xl font-bold">$25</span>
             <span className="text-gray-500">/ year</span>
           </div>
-          <button className="w-full bg-green-600 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:bg-green-700 text-xl">
-            Purchase Membership
+          <button 
+            onClick={handlePurchase}
+            disabled={processing}
+            className="w-full bg-green-600 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:bg-green-700 text-xl disabled:bg-gray-400"
+          >
+            {processing ? 'Processing...' : 'Purchase Membership'}
           </button>
         </div>
         <Link href="/" className="text-blue-600 hover:underline mt-8 inline-block">
