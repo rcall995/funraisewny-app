@@ -117,9 +117,9 @@ export default function MerchantDashboard() {
             <div className="bg-white p-6 rounded-lg shadow-md border">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">Your Deals</h2>
-                <Link href="/deals/new" className="inline-block bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition">
-                  + Create New Deal
-                </Link>
+                <Link href="/merchant/deals/new" className="inline-block bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition">
+  + Create New Deal
+</Link>
               </div>
               
               <div className="space-y-4">
