@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { User } from '@supabase/supabase-js';
 
+// --- UPDATED TYPE DEFINITION ---
 type BusinessProfile = {
   id: number;
   business_name: string;
   address: string;
   phone: string;
+  logo_url: string | null; // <-- ADDED
 };
 
 type BusinessProfileFormProps = {
@@ -22,6 +24,8 @@ export default function BusinessProfileForm({ user, onSave, initialData }: Busin
   const [businessName, setBusinessName] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
+  const [logoUrl, setLogoUrl] = useState(''); // <-- NEW STATE
+  
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -30,6 +34,7 @@ export default function BusinessProfileForm({ user, onSave, initialData }: Busin
       setBusinessName(initialData.business_name || '');
       setAddress(initialData.address || '');
       setPhone(initialData.phone || '');
+      setLogoUrl(initialData.logo_url || ''); // <-- LOAD NEW FIELD
     }
   }, [initialData]);
 
@@ -46,6 +51,7 @@ export default function BusinessProfileForm({ user, onSave, initialData }: Busin
       business_name: businessName,
       address: address,
       phone: phone,
+      logo_url: logoUrl || null, // <-- SAVE NEW FIELD
       owner_id: user.id, // Always ensure owner_id is set
     };
 
@@ -84,6 +90,22 @@ export default function BusinessProfileForm({ user, onSave, initialData }: Busin
         <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone Number</label>
         <input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"/>
       </div>
+      
+      {/* --- NEW LOGO INPUT FIELD --- */}
+      <div>
+        <label htmlFor="logoUrl" className="block text-sm font-medium text-gray-700">Logo URL (Image Link)</label>
+        <input 
+          id="logoUrl" 
+          type="url" 
+          value={logoUrl} 
+          onChange={(e) => setLogoUrl(e.target.value)} 
+          placeholder="e.g., https://your-domain.com/logo.png"
+          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+        />
+        <p className="mt-1 text-xs text-gray-500">Provide a direct link to your business logo image for use on deals.</p>
+      </div>
+      {/* --- END NEW LOGO INPUT FIELD --- */}
+
       <button
         onClick={handleSaveProfile}
         disabled={loading}
