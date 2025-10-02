@@ -22,7 +22,7 @@ type SupporterDisplayInfo = {
 
 export default function SupportPage() {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
-  const [supporters, setSupporters] = useState<SupporterDisplayInfo[]>([]); // Use the new simplified type
+  const [supporters, setSupporters] = useState<SupporterDisplayInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   
@@ -47,10 +47,13 @@ export default function SupportPage() {
           .order('created_at', { ascending: false })
           .limit(5);
         
-        // This logic safely processes the data and sets it in the correct shape
         if (supportersData) {
+          // --- THIS IS THE CORRECTED LOGIC ---
+          // We map over the data and access profiles[0] to get the object
           const displaySupporters = supportersData.map(s => ({
-            name: s.profiles?.full_name || 'An anonymous supporter'
+            name: s.profiles && Array.isArray(s.profiles) && s.profiles.length > 0 
+                  ? s.profiles[0].full_name 
+                  : 'An anonymous supporter'
           }));
           setSupporters(displaySupporters);
         }
@@ -60,9 +63,39 @@ export default function SupportPage() {
     fetchCampaignData();
   }, [supabase, slug]);
   
-  const handlePurchase = async () => { /* ... (This function is unchanged) ... */ };
-  if (loading) { /* ... (This is unchanged) ... */ }
-  if (!campaign) { /* ... (This is unchanged) ... */ }
+  const handlePurchase = async () => {
+    if (!user) {
+      router.push(`/login?redirect_to=/support/${slug}`);
+      return;
+    }
+    setProcessing(true);
+    const salePrice = 25.00;
+    const fundraiserShare = salePrice * 0.70;
+    const expires_at = new Date();
+    expires_at.setFullYear(expires_at.getFullYear() + 1);
+
+    const { error } = await supabase.from('memberships').insert({
+      user_id: user.id,
+      campaign_id: campaign!.id,
+      expires_at: expires_at.toISOString(),
+      sale_price: salePrice,
+      fundraiser_share: fundraiserShare,
+    });
+
+    if (error) {
+      alert('Error: Could not complete your membership. Please try again.');
+      setProcessing(false);
+    } else {
+      router.push('/support/thank-you');
+    }
+  };
+
+  if (loading) {
+    return <div className="p-8 text-center">Loading campaign...</div>;
+  }
+  if (!campaign) {
+    return <div className="p-8 text-center">Campaign not found.</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 md:p-8">
@@ -97,4 +130,4 @@ export default function SupportPage() {
   );
 }
 
-async function handlePurchase() {}
+// The unused placeholder function at the end of the file has been removed.
