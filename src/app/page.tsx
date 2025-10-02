@@ -17,14 +17,13 @@ const FeatureCard = ({ icon, title, children }: { icon: React.ReactNode, title: 
 export default function HomePage() {
   return (
     <main className="bg-white">
-      {/* Hero Section (Reverted to Marketing Content) */}
+      {/* Hero Section (Marketing/Recruitment Content) */}
       <section className="text-center py-20 md:py-28 px-4 bg-gray-50">
         <div className="container mx-auto max-w-4xl">
           <img
             src="/image_acafef.png"
             alt="FunraiseWNY Logo"
-            className="w-4/5 h-auto max-w-[300px] md:h-56 md:w-auto md:max-w-none mx-auto mb-8"
-            // Note: Add placeholder.svg if image_acafef.png is missing:
+            className="h-16 w-auto" 
             onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
           />
           <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
@@ -35,10 +34,10 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4">
             <Link href="/for-fundraisers" className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg shadow-xl hover:bg-green-700 transition duration-300 inline-block text-center text-lg">
-              I&apos;m a Fundraiser
+              Start a Fundraiser
             </Link>
             <Link href="/for-businesses" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-300 inline-block text-center text-lg">
-              I&apos;m a Business
+              Partner My Business
             </Link>
           </div>
         </div>

@@ -29,7 +29,7 @@ export default function Header() {
           {loading ? (
             <div className="h-8 w-36 bg-gray-200 rounded animate-pulse"></div>
           ) : user ? (
-            // --- LOGGED-IN VIEW ---
+            // --- LOGGED-IN VIEW (No changes) ---
             <>
               {isMember && (
                 <Link href="/" className="text-gray-600 hover:text-blue-600">View Deals</Link>
@@ -38,7 +38,7 @@ export default function Header() {
                 <Link href="/merchant" className="text-gray-600 hover:text-blue-600">Merchant Portal</Link>
               )}
               {isFundraiser && (
-                 <Link href="/campaigns" className="text-gray-600 hover:text-blue-600">Fundraiser Portal</Link>
+                  <Link href="/campaigns" className="text-gray-600 hover:text-blue-600">Fundraiser Portal</Link>
               )}
               {!isMerchant && !isFundraiser && (
                   <Link href="/dashboard" className="text-gray-600 hover:text-blue-600">My Dashboard</Link>
@@ -46,10 +46,9 @@ export default function Header() {
               <SignOutButton />
             </>
           ) : (
-            // --- LOGGED-OUT VIEW ---
+            // --- LOGGED-OUT VIEW (Removed 'Sign Up' button) ---
             <>
-              <Link href="/login" className="text-gray-600 hover:text-blue-600">Login</Link>
-              <Link href="/login" className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Sign Up</Link>
+              <Link href="/login" className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Login</Link>
             </>
           )}
         </div>
