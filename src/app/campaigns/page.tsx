@@ -62,7 +62,6 @@ export default function CampaignsPage() {
   const [activeTab, setActiveTab] = useState<{ [key: number]: string }>({}); 
   const supabase = createClientComponentClient();
 
-  // FIX: Rewritten to use a single, efficient query
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
 
@@ -170,6 +169,9 @@ export default function CampaignsPage() {
           </Link>
         )}
       </div>
+
+      {/* --- TEMPORARY DEBUG LINE ADDED --- */}
+      {user && <p className="text-red-500 font-mono text-xs mb-4">DEBUG: Logged in User ID is: {user.id}</p>}
       
       <div className="mb-6 border-b border-gray-200">
         <nav className="-mb-px flex space-x-6">
