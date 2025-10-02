@@ -167,7 +167,7 @@ export default function DealsPage() {
 
         <div className="text-center mt-12">
             <Link href="/for-businesses" className="text-blue-600 hover:underline">
-                Are you a business interested in offering a deal? Learn more here.
+                Are you a business interested in offering a deal?? Learn more here.
             </Link>
         </div>
       </div>
