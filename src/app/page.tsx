@@ -9,7 +9,7 @@ import Link from 'next/link';
 // --- Type Definitions for Deals/Businesses ---
 type Deal = {
   id: number;
-  // RENAMED property to match UI usage: deal_name instead of 'title'
+  // This property name must match the name used in the rendering logic (line 131).
   deal_name: string; 
   description: string;
   fine_print: string | null; 
@@ -18,6 +18,7 @@ type Deal = {
   profiles: { 
     full_name: string; // Business Name
     logo_url: string | null; 
+    // The DB technically returns this field as 'title' but we convert it to 'deal_name' below.
   } | null;
 };
 
@@ -44,7 +45,7 @@ export default function DealsPage() {
     setLoading(true);
     setError(null);
     
-    // Fetch DB columns 'title' and 'fine_print'
+    // We explicitly fetch 'title' from the database
     const { data: dealsData, error: dbError } = await supabase
       .from('deals')
       .select(`
@@ -63,20 +64,20 @@ export default function DealsPage() {
       setError('Failed to load deals. Please try again later.');
       setDeals([]);
     } else {
-      // Map the incoming data to the required 'Deal' type. 
-      // We take the DB field 'title' and assign it to the desired application property 'deal_name'.
-      const formattedDeals = (dealsData || []).map(deal => {
-        // We ensure that we only include properties defined in the Deal type.
-        const { title, ...rest } = deal as any; // Cast locally for easy extraction
-        return {
-          ...rest,
-          // Rename: Use the DB column 'title' to populate the desired type field 'deal_name'
-          deal_name: title, 
-        };
-      });
+      // FIX: Use a simple map and assertion to correctly name 'deal_name' from 'title',
+      // avoiding intermediate interfaces which caused the conflict.
+      const formattedDeals = (dealsData || []).map((deal: any) => ({
+          id: deal.id,
+          business_id: deal.business_id,
+          // RENAME: Map DB column 'title' to application property 'deal_name'
+          deal_name: deal.title, 
+          description: deal.description,
+          fine_print: deal.fine_print,
+          status: deal.status,
+          profiles: deal.profiles,
+      }));
       
-      // Use unknown to coerce the correctly mapped shape into the required Deal[] type
-      setDeals(formattedDeals as unknown as Deal[]);
+      setDeals(formattedDeals as Deal[]);
     }
     setLoading(false);
   }, [supabase]);
