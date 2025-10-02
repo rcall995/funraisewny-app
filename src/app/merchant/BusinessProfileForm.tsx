@@ -4,19 +4,21 @@ import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { User } from '@supabase/supabase-js';
 
-// --- UPDATED TYPE DEFINITION ---
-type BusinessProfile = {
-  id: number;
-  business_name: string;
-  address: string;
-  phone: string;
-  logo_url: string | null; // <-- ADDED
-};
+// --- TYPE DEFINITION REMOVED from this component to fix TS error ---
+// The type will now be imported from the parent component (page.tsx)
 
+// Define the required shape of data for the component props (BusinessProfile comes from parent)
 type BusinessProfileFormProps = {
   user: User;
   onSave: () => void;
-  initialData: BusinessProfile | null;
+  // NOTE: BusinessProfile type MUST now be defined in the parent page (src/app/merchant/page.tsx)
+  initialData: {
+    id: number;
+    business_name: string;
+    address: string;
+    phone: string;
+    logo_url: string | null;
+  } | null;
 };
 
 export default function BusinessProfileForm({ user, onSave, initialData }: BusinessProfileFormProps) {
@@ -24,7 +26,7 @@ export default function BusinessProfileForm({ user, onSave, initialData }: Busin
   const [businessName, setBusinessName] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
-  const [logoUrl, setLogoUrl] = useState(''); // <-- NEW STATE
+  const [logoUrl, setLogoUrl] = useState(''); 
   
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,7 +36,7 @@ export default function BusinessProfileForm({ user, onSave, initialData }: Busin
       setBusinessName(initialData.business_name || '');
       setAddress(initialData.address || '');
       setPhone(initialData.phone || '');
-      setLogoUrl(initialData.logo_url || ''); // <-- LOAD NEW FIELD
+      setLogoUrl(initialData.logo_url || ''); 
     }
   }, [initialData]);
 
@@ -51,7 +53,7 @@ export default function BusinessProfileForm({ user, onSave, initialData }: Busin
       business_name: businessName,
       address: address,
       phone: phone,
-      logo_url: logoUrl || null, // <-- SAVE NEW FIELD
+      logo_url: logoUrl || null,
       owner_id: user.id, // Always ensure owner_id is set
     };
 
