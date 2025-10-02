@@ -4,7 +4,6 @@ import Link from 'next/link';
 
 /* eslint-disable @next/next/no-img-element */
 
-// A small reusable component for the feature cards
 const FeatureCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
     <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
         <div className="mx-auto w-14 h-14 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 mb-5">
@@ -35,10 +34,10 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4">
              <Link href="/for-fundraisers" className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg shadow-xl hover:bg-green-700 transition duration-300 inline-block text-center text-lg">
-              I'm a Fundraiser
+              I&apos;m a Fundraiser
             </Link>
             <Link href="/for-businesses" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-300 inline-block text-center text-lg">
-              I'm a Business
+              I&apos;m a Business
             </Link>
           </div>
         </div>
