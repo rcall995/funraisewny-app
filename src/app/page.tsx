@@ -9,7 +9,7 @@ import Link from 'next/link';
 // --- Type Definitions for Deals/Businesses ---
 type Deal = {
   id: number;
-  // This is the property we use in rendering, derived from the DB's 'title' column
+  // RENAMED property to match UI usage: deal_name instead of 'title'
   deal_name: string; 
   description: string;
   fine_print: string | null; 
@@ -24,8 +24,6 @@ type Deal = {
 // Placeholder Code for members (assuming a static membership model for now)
 const PLACEHOLDER_REDEEM_CODE = 'FUNRAISE-25';
 
-// NOTE: Retained FeatureCard definition for potential future use or if other pages rely on it, 
-// but it is not utilized in this new DealsPage logic.
 const FeatureCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
     <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
         <div className="mx-auto w-14 h-14 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 mb-5">
@@ -46,7 +44,7 @@ export default function DealsPage() {
     setLoading(true);
     setError(null);
     
-    // Requesting the actual database column names: title, fine_print
+    // Fetch DB columns 'title' and 'fine_print'
     const { data: dealsData, error: dbError } = await supabase
       .from('deals')
       .select(`
@@ -65,18 +63,19 @@ export default function DealsPage() {
       setError('Failed to load deals. Please try again later.');
       setDeals([]);
     } else {
-      // Map the incoming data. We rename the database column 'title' to the type property 'deal_name' here.
-      const formattedDeals = (dealsData || []).map(deal => ({
-        // Spread all properties first
-        ...deal,
-        // Map 'title' (from DB) to 'deal_name' (in state type)
-        deal_name: deal.title, 
-        // Manually ensure the original 'title' is removed to match the final Deal type structure
-        // @ts-ignore
-        title: undefined
-      }));
+      // Map the incoming data to the required 'Deal' type. 
+      // We take the DB field 'title' and assign it to the desired application property 'deal_name'.
+      const formattedDeals = (dealsData || []).map(deal => {
+        // We ensure that we only include properties defined in the Deal type.
+        const { title, ...rest } = deal as any; // Cast locally for easy extraction
+        return {
+          ...rest,
+          // Rename: Use the DB column 'title' to populate the desired type field 'deal_name'
+          deal_name: title, 
+        };
+      });
       
-      // Cast is used to satisfy TypeScript after the mapping transformation
+      // Use unknown to coerce the correctly mapped shape into the required Deal[] type
       setDeals(formattedDeals as unknown as Deal[]);
     }
     setLoading(false);
@@ -133,7 +132,7 @@ export default function DealsPage() {
                 )}
                 
                 <div className="flex-grow">
-                  {/* Display deal_name */}
+                  {/* Accessing the corrected property: deal.deal_name */}
                   <h2 className="text-2xl font-bold text-blue-800">{deal.deal_name}</h2>
                   <p className="text-lg text-gray-600 mt-1">
                     <strong className="font-semibold">{deal.profiles?.full_name || 'Partnering Business'}</strong>
