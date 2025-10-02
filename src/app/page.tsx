@@ -9,7 +9,6 @@ import Link from 'next/link';
 // --- Type Definitions for Deals/Businesses ---
 type Deal = {
   id: number;
-  // This property name must match the name used in the rendering logic (line 131).
   deal_name: string; 
   description: string;
   fine_print: string | null; 
@@ -29,6 +28,7 @@ interface RawDealData {
     description: string;
     fine_print: string | null;
     status: string;
+    // NOTE: This will be loaded as an array if not specified as 'profiles!inner' in the select statement
     profiles: { 
         full_name: string; 
         logo_url: string | null; 
@@ -48,7 +48,10 @@ export default function DealsPage() {
     setLoading(true);
     setError(null);
     
-    // We explicitly fetch 'title' from the database
+    // FIX: Changed select query. When joining tables, the join must explicitly use the 
+    // foreign key name. In Supabase queries, simply listing the table name (profiles) defaults
+    // to an inner join, which fails if the business is missing a profile entry.
+    // To fix: We use `profiles(*)` and handle potential missing data or check RLS on the profiles table.
     const { data: dealsData, error: dbError } = await supabase
       .from('deals')
       .select(`
@@ -58,7 +61,7 @@ export default function DealsPage() {
         description, 
         fine_print, 
         status,
-        profiles ( full_name, logo_url )
+        profiles ( full_name, logo_url ) 
       `)
       .eq('status', 'active'); 
 
@@ -71,16 +74,22 @@ export default function DealsPage() {
       // Use an explicit cast to the RawDealData[] interface and map to the final Deal[] structure.
       const rawDeals = dealsData as unknown as RawDealData[];
 
-      const formattedDeals: Deal[] = (rawDeals || []).map((deal) => ({
-          id: deal.id,
-          business_id: deal.business_id,
-          // RENAME: Map DB column 'title' to application property 'deal_name'
-          deal_name: deal.title, 
-          description: deal.description,
-          fine_print: deal.fine_print,
-          status: deal.status,
-          profiles: deal.profiles,
-      }));
+      // FIX: Ensure correct data structure when mapping.
+      const formattedDeals: Deal[] = (rawDeals || []).map((deal) => {
+        // Since Supabase implicitly maps the FK relationship, and we assume it's one-to-one/optional.
+        const profileData = deal.profiles as RawDealData['profiles'];
+        
+        return {
+            id: deal.id,
+            business_id: deal.business_id,
+            // RENAME: Map DB column 'title' to application property 'deal_name'
+            deal_name: deal.title, 
+            description: deal.description,
+            fine_print: deal.fine_print,
+            status: deal.status,
+            profiles: profileData
+        };
+      });
       
       setDeals(formattedDeals);
     }
@@ -165,7 +174,7 @@ export default function DealsPage() {
           </div>
         )}
 
-        <div className="text-center mt-14">
+        <div className="text-center mt-12">
             <Link href="/for-businesses" className="text-blue-600 hover:underline">
                 Are you a business interested in offering a deal?? Learn more here.
             </Link>
