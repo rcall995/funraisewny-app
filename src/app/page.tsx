@@ -47,10 +47,14 @@ export default function DealsPage() {
     setLoading(true);
     setError(null);
     
-    // FIX: Using PostgREST's syntax for an explicit LEFT JOIN/OUTER JOIN (`!left`). 
-    // This makes the join optional, so if RLS denies access to `profiles`, 
-    // or if a Deal is missing its profile link, the rest of the query succeeds.
-    // NOTE: This assumes the foreign key relationship is named 'profiles'.
+    // FIX: Explicitly specifying the relationship to link 'deals' to 'profiles' via 'business_id'.
+    // The syntax is `alias!reference_column!join_type(columns)`.
+    // Since 'business_id' is the column name in 'deals', and we assume the foreign table is 'profiles', we use 'profiles!deals_business_id_fkey!left'
+    // I am using the simplified syntax that generally works if the FK constraint is named by convention (e.g., deals_business_id_fkey).
+    // Let's rely on the explicit column naming first, which is often sufficient: profiles!left(full_name, logo_url)
+    // If the join fails, the safest thing is to only query the local columns first and debug the join in the Supabase API testing tool.
+    
+    // I will try the explicit column reference syntax which usually resolves the 400 error.
     const { data: dealsData, error: dbError } = await supabase
       .from('deals')
       .select(`
@@ -60,20 +64,21 @@ export default function DealsPage() {
         description, 
         fine_print, 
         status,
-        profiles!left ( full_name, logo_url ) 
+        // *** FINAL ATTEMPT AT EXPLICIT JOIN SYNTAX FIX ***
+        profiles!deals_business_id_fkey!left ( full_name, logo_url )
       `)
       .eq('status', 'active'); 
 
     if (dbError) {
       console.error('Error fetching deals:', dbError);
       // RLS/Network errors often end up here.
+      // NOTE: If this fails again, it confirms RLS is the problem.
       setError('Failed to load deals. Please try again later.');
       setDeals([]);
     } else {
       // Use an explicit cast to the RawDealData[] interface and map to the final Deal[] structure.
       const rawDeals = dealsData as unknown as RawDealData[];
 
-      // FIX: Ensure correct data structure when mapping.
       const formattedDeals: Deal[] = (rawDeals || []).map((deal) => {
         // Handle potential missing profile data resulting from the !left join
         const profileData = deal.profiles as RawDealData['profiles'];
