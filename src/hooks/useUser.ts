@@ -18,27 +18,31 @@ export default function useUser(): UserProfile {
   const [isMember, setIsMember] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Helper type definition for the expected raw Supabase response structure
+  type SupabaseResponse = { data: unknown | null | Record<string, unknown> | Array<unknown>, error: unknown };
+
   // Helper function to safely execute a Supabase query that might fail due to RLS/policies
-  // FIX: Replaced 'any' with 'unknown' for safer, linting-compliant handling of unknown return types.
-  const safeQuery = async (queryPromise: Promise<unknown>): Promise<unknown> => {
+  // FIX: Using conditional logic on unknown result and removing internal 'any' cast.
+  const safeQuery = async (queryPromise: Promise<SupabaseResponse>): Promise<{ data: boolean; error: boolean }> => {
     try {
-      // Cast the result as unknown to then access its properties safely
-      const result = await queryPromise as { data: any, error: any }; 
-      
-      if (result.error && result.error.code !== 'PGRST116') {
+      const result = await queryPromise;
+
+      if (result.error && (result.error as { code: string }).code !== 'PGRST116') {
         // Log the error but don't crash or throw, return failure state
         console.warn('SafeQuery encountered non-critical error:', result.error);
-        return { data: null, error: true };
+        return { data: false, error: true };
       }
       
       const data = result.data;
-      // Return true if data exists (not null and not an empty array)
-      const hasData = data && (Array.isArray(data) ? data.length > 0 : !!data);
+      // Determine if data exists. Checks for null, undefined, and empty arrays/objects.
+      const hasData = data !== null && data !== undefined && (Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0);
+      
       return { data: hasData, error: false };
+
     } catch (e) {
       // Catch network errors or unexpected exceptions
       console.error('SafeQuery caught exception:', e);
-      return { data: null, error: true };
+      return { data: false, error: true };
     }
   };
 
@@ -49,20 +53,21 @@ export default function useUser(): UserProfile {
     if (user) {
       setLoading(true);
       
+      // FIX: Query results are now typed as the explicit SafeQuery return structure { data: boolean; error: boolean }
+      
       // 1. Check for Merchant Status
       const merchantRes = await safeQuery(
         supabase.from('businesses').select('id').eq('owner_id', user.id).single()
-      ) as { data: boolean }; // Expecting the custom query object structure
+      );
       const isUserMerchant = merchantRes.data;
       setIsMerchant(isUserMerchant);
 
       // 2. Perform other checks
-      
       const [fundraiserRes, memberRes] = await Promise.all([
         // Check for a campaign
-        safeQuery(supabase.from('campaigns').select('id').eq('organizer_id', user.id).limit(1).single()) as { data: boolean },
+        safeQuery(supabase.from('campaigns').select('id').eq('organizer_id', user.id).limit(1).single()),
         // Check for an active membership
-        safeQuery(supabase.from('memberships').select('id').eq('user_id', user.id).gte('expires_at', new Date().toISOString()).limit(1).single()) as { data: boolean }
+        safeQuery(supabase.from('memberships').select('id').eq('user_id', user.id).gte('expires_at', new Date().toISOString()).limit(1).single())
       ]);
 
       setIsFundraiser(fundraiserRes.data);
