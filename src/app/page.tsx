@@ -65,6 +65,7 @@ export default function DealsPage() {
 
     if (dbError) {
       console.error('Error fetching deals:', dbError);
+      // RLS/Network errors often end up here.
       setError('Failed to load deals. Please try again later.');
       setDeals([]);
     } else {
