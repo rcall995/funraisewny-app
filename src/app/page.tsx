@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } => 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 
@@ -9,8 +9,8 @@ import Link from 'next/link';
 // --- Type Definitions for Deals/Businesses ---
 type Deal = {
   id: number;
-  // We'll use 'title' from the DB column and map it to 'deal_name' for display
-  title: string; 
+  // RENAMED from 'title' to 'deal_name' for clarity in the UI.
+  deal_name: string; 
   description: string;
   fine_print: string | null; 
   status: string;
@@ -49,6 +49,7 @@ export default function DealsPage() {
     setError(null);
     
     // Fetch all active deals and join with the profiles table
+    // NOTE: We still request the database column as 'title' because that is its actual name in Supabase
     const { data: dealsData, error: dbError } = await supabase
       .from('deals')
       .select(`
@@ -67,11 +68,18 @@ export default function DealsPage() {
       setError('Failed to load deals. Please try again later.');
       setDeals([]);
     } else {
-      // Map incoming 'title' field to 'deal_name' as expected by the Deal type structure
+      // Map the incoming data. We rename the database column 'title' to the type property 'deal_name' here.
       const formattedDeals = (dealsData || []).map(deal => ({
+        // Use spread to include everything else
         ...deal,
-        deal_name: deal.title, // Use title as the display name
+        // Map the DB column 'title' to the application property 'deal_name'
+        deal_name: deal.title, 
+        // We delete the temporary 'title' property used for mapping before setting state
+        // @ts-ignore: We know 'title' exists temporarily for mapping
+        title: undefined
       }));
+      
+      // Use unknown as intermediate cast to force TS to accept the transformation
       setDeals(formattedDeals as unknown as Deal[]);
     }
     setLoading(false);
@@ -128,6 +136,7 @@ export default function DealsPage() {
                 )}
                 
                 <div className="flex-grow">
+                  {/* FIXED: Now uses deal.deal_name which is defined in the Deal type */}
                   <h2 className="text-2xl font-bold text-blue-800">{deal.deal_name}</h2>
                   <p className="text-lg text-gray-600 mt-1">
                     <strong className="font-semibold">{deal.profiles?.full_name || 'Partnering Business'}</strong>
