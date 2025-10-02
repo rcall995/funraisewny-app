@@ -1,14 +1,12 @@
 'use client';
-
 import { useState, useEffect, useCallback } from 'react';
-import BusinessProfileForm from './BusinessProfileForm';
-import useUser from '@/hooks/useUser';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import useUser from '@/hooks/useUser';
+import BusinessProfileForm from '@/components/BusinessProfileForm'; 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
-// --- SHARED TYPE DEFINITION (Defined once here to fix the "Two different types" error) ---
-type BusinessProfile = {
+// --- TYPE DEFINITION MOVED HERE from the child component ---
+export type BusinessProfile = {
   id: number;
   business_name: string;
   address: string;
@@ -16,139 +14,159 @@ type BusinessProfile = {
   logo_url: string | null; 
 };
 
-export default function MerchantPage() {
-    const { user, loading: userLoading } = useUser();
-    const router = useRouter();
-    const supabase = createClientComponentClient();
+// --- NEW TYPE for Deal data ---
+export type Deal = {
+  id: number;
+  title: string;
+  description: string;
+  is_active: boolean;
+};
 
-    const [profile, setProfile] = useState<BusinessProfile | null>(null);
-    const [pageLoading, setPageLoading] = useState(true);
-    const [isEditingProfile, setIsEditingProfile] = useState(false);
-    // Added state for general Supabase data error display
-    const [dbError, setDbError] = useState<string | null>(null);
+export default function MerchantDashboard() {
+  const supabase = createClientComponentClient();
+  const { user, loading: userLoading } = useUser();
+  
+  const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-    // 1. Fetch Existing Profile
-    const fetchProfile = useCallback(async (userId: string) => {
-        setPageLoading(true);
-        setDbError(null);
+  const fetchMerchantData = useCallback(async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    setError(null);
 
-        const { data, error } = await supabase
-            .from('businesses')
-            .select('id, business_name, address, phone, logo_url') // Selects the new logo_url field
-            .eq('owner_id', userId)
-            .single();
+    // 1. Fetch Business Profile
+    const { data: profile, error: profileError } = await supabase
+      .from('businesses')
+      .select('id, business_name, address, phone, logo_url')
+      .eq('owner_id', user.id)
+      .single();
 
-        if (error && error.code !== 'PGRST116') { // PGRST116 is 'No rows found'
-            console.error('Error loading business profile:', error);
-            // FIX: Displaying the specific Supabase error code to the user
-            setDbError(`Error Code: ${error.code}. Check RLS or DB schema.`); 
-        }
-
-        if (data) {
-            setProfile(data as BusinessProfile);
-            setIsEditingProfile(false);
-        } else {
-            setProfile(null);
-            setIsEditingProfile(true); // Automatically open the form for new users
-        }
-        setPageLoading(false);
-    }, [supabase]);
-
-    useEffect(() => {
-        if (user && !userLoading) {
-            fetchProfile(user.id);
-        } else if (!user && !userLoading) {
-            // Redirect unauthenticated users
-            router.push('/login');
-        }
-    }, [user, userLoading, fetchProfile, router]);
-
-    const handleFormSave = () => {
-        // After save, refresh the profile data
-        if (user) {
-            fetchProfile(user.id);
-        }
-        setIsEditingProfile(false);
-    };
-
-    if (userLoading || pageLoading) {
-        return <div className="p-8 text-center">Loading merchant dashboard...</div>;
+    if (profileError && profileError.code !== 'PGRST116') { // Ignore 'No rows found' error
+      setError(profileError.message);
+      setLoading(false);
+      return;
     }
 
-    if (!user) return null; 
-    
-    // Fallback image source if the business hasn't set one yet
-    const fallbackLogo = profile?.logo_url || '/placeholder.svg'; // Use a basic placeholder URL
+    setBusinessProfile(profile);
 
-    // --- Component Rendering ---
-    return (
-        <div className="min-h-screen bg-gray-50 py-10">
-            <div className="container mx-auto p-4 max-w-2xl">
-                <h1 className="text-3xl font-bold text-gray-800 mb-6">Merchant Dashboard</h1>
+    // 2. If profile exists, fetch its deals
+    if (profile) {
+      const { data: dealsData, error: dealsError } = await supabase
+        .from('deals')
+        .select('id, title, description, is_active')
+        .eq('business_id', profile.id)
+        .order('created_at', { ascending: false });
+      
+      if (dealsError) {
+        setError(dealsError.message);
+      } else {
+        setDeals(dealsData || []);
+      }
+    }
 
-                {dbError && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
-                        <strong className="font-bold">Database Access Error:</strong>
-                        <span className="block sm:inline ml-2">{dbError}</span>
-                        <p className="text-sm mt-1">Please verify your table schemas and Foreign Key constraints.</p>
+    setLoading(false);
+  }, [user, supabase]);
+
+  useEffect(() => {
+    if (!userLoading) {
+      fetchMerchantData();
+    }
+  }, [user, userLoading, fetchMerchantData]);
+
+  const toggleDealStatus = async (dealId: number, currentStatus: boolean) => {
+    const { error } = await supabase
+      .from('deals')
+      .update({ is_active: !currentStatus })
+      .eq('id', dealId);
+
+    if (error) {
+      setError(error.message);
+    } else {
+      // Refresh data to show the change
+      fetchMerchantData(); 
+    }
+  };
+
+  if (userLoading || loading) {
+    return <div className="text-center p-12">Loading merchant data...</div>;
+  }
+  
+  if (!user) {
+      return (
+          <div className="text-center p-12">
+              <p>Please log in to view your merchant dashboard.</p>
+              <Link href="/login" className="text-blue-600 hover:underline">Go to Login</Link>
+          </div>
+      );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <main className="container mx-auto p-4 sm:p-6 lg:p-8">
+        {!businessProfile ? (
+          // View for creating a profile
+          <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome!</h1>
+            <p className="text-gray-600 mb-6">Let's set up your business profile to get started.</p>
+            <BusinessProfileForm user={user} onSave={fetchMerchantData} initialData={null} />
+          </div>
+        ) : (
+          // Main dashboard view
+          <div className="space-y-8">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Welcome back, {businessProfile.business_name}!
+            </h1>
+            
+            {/* Deals Management Section */}
+            <div className="bg-white p-6 rounded-lg shadow-md border">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-800">Your Deals</h2>
+                <Link href="/deals/new" className="inline-block bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition">
+                  + Create New Deal
+                </Link>
+              </div>
+              
+              <div className="space-y-4">
+                {deals.length > 0 ? (
+                  deals.map(deal => (
+                    <div key={deal.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                      <div>
+                        <p className="font-semibold text-gray-800">{deal.title}</p>
+                        <p className={`text-sm ${deal.is_active ? 'text-green-600' : 'text-gray-500'}`}>
+                          Status: {deal.is_active ? 'Active' : 'Inactive'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => toggleDealStatus(deal.id, deal.is_active)}
+                        className={`py-1 px-3 text-sm font-medium rounded-full ${
+                          deal.is_active 
+                          ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                          : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        }`}
+                      >
+                        {deal.is_active ? 'Deactivate' : 'Activate'}
+                      </button>
                     </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">You haven't created any deals yet.</p>
                 )}
-
-                {/* Profile Form / View Container */}
-                <div className="bg-white p-6 rounded-lg shadow-xl">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold">Business Profile</h2>
-                        
-                        {!isEditingProfile && profile && (
-                            <button
-                                onClick={() => setIsEditingProfile(true)}
-                                className="text-sm font-medium text-blue-600 hover:text-blue-800"
-                            >
-                                Edit Profile
-                            </button>
-                        )}
-                    </div>
-                    
-                    {!profile || isEditingProfile ? (
-                        // Pass the required props to the child component
-                        <BusinessProfileForm 
-                            user={user} 
-                            onSave={handleFormSave} 
-                            initialData={profile} 
-                        />
-                    ) : (
-                        <div className="space-y-3">
-                            <div className="flex items-center space-x-4">
-                                <img
-                                    src={fallbackLogo}
-                                    alt={`${profile.business_name} logo`}
-                                    className="w-16 h-16 object-contain rounded-full border shadow-sm"
-                                    onError={(e) => {
-                                        // Fallback if the URL fails to load
-                                        e.currentTarget.src = '/placeholder.svg'; 
-                                    }}
-                                />
-                                <div>
-                                    <p className="text-lg font-bold">{profile.business_name}</p>
-                                    <p className="text-sm text-gray-500">Owner: {user.email}</p>
-                                </div>
-                            </div>
-                            <p><strong>Address:</strong> {profile.address}</p>
-                            <p><strong>Phone:</strong> {profile.phone}</p>
-                            <p><strong>Logo URL:</strong> <a href={profile.logo_url || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-500 break-all hover:underline">{profile.logo_url || 'None set'}</a></p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Placeholder for Deals Management */}
-                <div className="mt-8 p-6 bg-white rounded-lg shadow-xl">
-                    <h2 className="text-xl font-semibold mb-3">Your Deals</h2>
-                    <p className="text-gray-600">Deal management features will go here.</p>
-                    <Link href="/merchant/deals/new" className="mt-4 inline-block text-blue-600 hover:underline">
-                        + Create New Deal
-                    </Link>
-                </div>
+              </div>
             </div>
-        </div>
-    );
+
+            {/* Business Profile Section */}
+            <div className="bg-white p-6 rounded-lg shadow-md border">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Edit Your Business Profile</h2>
+              <BusinessProfileForm user={user} onSave={fetchMerchantData} initialData={businessProfile} />
+            </div>
+
+            {error && <p className="mt-4 text-sm text-center text-red-600">{error}</p>}
+          </div>
+        )}
+      </main>
+    </div>
+  );
 }
