@@ -1,12 +1,31 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import useUser from '@/hooks/useUser';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
+// Using a more specific type instead of 'any'
+type Membership = {
+  id: number;
+  campaign_id: number;
+  fundraiser_share: number;
+  profiles: { full_name: string; email: string; } | null;
+};
+type Campaign = {
+  id: number;
+  slug: string;
+  campaign_name: string;
+  goal_amount: number;
+  start_date: string | null;
+  end_date: string | null;
+  status: string;
+  memberships: Membership[];
+};
+
 export default function CampaignsPage() {
   const { user, loading: userLoading } = useUser();
-  const [campaigns, setCampaigns] = useState<any[]>([]); // Using 'any' to prevent type errors during this test
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]); // <-- Fix: Used the specific 'Campaign' type
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
 
@@ -14,8 +33,6 @@ export default function CampaignsPage() {
     console.log('%c--- STARTING DIAGNOSTIC ---', 'color: blue; font-weight: bold;');
     setLoading(true);
 
-    // Step 1: Fetch campaigns, ignoring the 'status' filter for this test.
-    console.log('Step 1: Fetching campaigns for organizer_id:', userId);
     const { data: campaignsData, error: campaignsError } = await supabase
       .from('campaigns')
       .select('*')
@@ -31,8 +48,10 @@ export default function CampaignsPage() {
       return;
     }
 
-    console.log(`Step 1 Success: Found ${campaignsData.length} campaign(s). The raw data is above.`);
-    setCampaigns(campaignsData); // Set the raw data for display
+    console.log(`Step 1 Success: Found ${campaignsData.length} campaign(s).`);
+    
+    // For the purpose of this diagnostic, we'll cast to Campaign[]
+    setCampaigns(campaignsData as Campaign[]);
     setLoading(false);
     console.log('%c--- DIAGNOSTIC COMPLETE ---', 'color: green; font-weight: bold;');
   }, [supabase]);
@@ -56,8 +75,7 @@ export default function CampaignsPage() {
       <hr className="my-4" />
       {campaigns.length > 0 ? (
         <div>
-          <h2 className="text-xl font-semibold text-green-600">Success! The database query found your campaigns.</h2>
-          <p className="my-2">The list below confirms we are successfully reading the `campaigns` table:</p>
+          <h2 className="text-xl font-semibold text-green-600">Success! Campaigns were found.</h2>
           <ul className="list-disc pl-5">
             {campaigns.map((c) => (
               <li key={c.id}>
@@ -65,12 +83,13 @@ export default function CampaignsPage() {
               </li>
             ))}
           </ul>
-          <p className="mt-4">Please copy the entire content of the browser console and paste it in your reply.</p>
+          {/* --- CORRECTED LINE --- */}
+          <p className="mt-4">Please copy the entire content of the browser console and paste it in your reply. This includes the &quot;Data Received&quot; and &quot;Error Received&quot; lines.</p>
         </div>
       ) : (
         <div>
           <h2 className="text-xl font-semibold text-red-600">Diagnostic Result: No campaigns were found.</h2>
-          <p className="mt-4">This confirms the database query is returning an empty list. Please check your browser console. Copy the entire log, from "--- STARTING DIAGNOSTIC ---" to "--- DIAGNOSTIC COMPLETE ---", and paste it in your reply.</p>
+          <p className="mt-4">This confirms the database query is returning an empty list. Please check your browser console. Copy the entire log, from &quot;--- STARTING DIAGNOSTIC ---&quot; to &quot;--- DIAGNOSTIC COMPLETE ---&quot;, and paste it in your reply.</p>
         </div>
       )}
     </div>
