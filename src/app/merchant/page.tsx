@@ -5,7 +5,6 @@ import useUser from '@/hooks/useUser';
 import BusinessProfileForm from '@/components/BusinessProfileForm'; 
 import Link from 'next/link';
 
-// --- TYPE DEFINITION MOVED HERE from the child component ---
 export type BusinessProfile = {
   id: number;
   business_name: string;
@@ -14,7 +13,6 @@ export type BusinessProfile = {
   logo_url: string | null; 
 };
 
-// --- NEW TYPE for Deal data ---
 export type Deal = {
   id: number;
   title: string;
@@ -37,14 +35,13 @@ export default function MerchantDashboard() {
     setLoading(true);
     setError(null);
 
-    // 1. Fetch Business Profile
     const { data: profile, error: profileError } = await supabase
       .from('businesses')
       .select('id, business_name, address, phone, logo_url')
       .eq('owner_id', user.id)
       .single();
 
-    if (profileError && profileError.code !== 'PGRST116') { // Ignore 'No rows found' error
+    if (profileError && profileError.code !== 'PGRST116') {
       setError(profileError.message);
       setLoading(false);
       return;
@@ -52,7 +49,6 @@ export default function MerchantDashboard() {
 
     setBusinessProfile(profile);
 
-    // 2. If profile exists, fetch its deals
     if (profile) {
       const { data: dealsData, error: dealsError } = await supabase
         .from('deals')
@@ -85,7 +81,6 @@ export default function MerchantDashboard() {
     if (error) {
       setError(error.message);
     } else {
-      // Refresh data to show the change
       fetchMerchantData(); 
     }
   };
@@ -107,20 +102,18 @@ export default function MerchantDashboard() {
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         {!businessProfile ? (
-          // View for creating a profile
           <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
             <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome!</h1>
-            <p className="text-gray-600 mb-6">Let's set up your business profile to get started.</p>
+            {/* FIX: Changed "Let's" to "Let&apos;s" */}
+            <p className="text-gray-600 mb-6">Let&apos;s set up your business profile to get started.</p>
             <BusinessProfileForm user={user} onSave={fetchMerchantData} initialData={null} />
           </div>
         ) : (
-          // Main dashboard view
           <div className="space-y-8">
             <h1 className="text-3xl font-bold text-gray-900">
               Welcome back, {businessProfile.business_name}!
             </h1>
             
-            {/* Deals Management Section */}
             <div className="bg-white p-6 rounded-lg shadow-md border">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">Your Deals</h2>
@@ -152,12 +145,12 @@ export default function MerchantDashboard() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-center py-4">You haven't created any deals yet.</p>
+                  // FIX: Changed "You haven't" to "You haven&apos;t"
+                  <p className="text-gray-500 text-center py-4">You haven&apos;t created any deals yet.</p>
                 )}
               </div>
             </div>
 
-            {/* Business Profile Section */}
             <div className="bg-white p-6 rounded-lg shadow-md border">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Edit Your Business Profile</h2>
               <BusinessProfileForm user={user} onSave={fetchMerchantData} initialData={businessProfile} />
