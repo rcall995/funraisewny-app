@@ -12,7 +12,7 @@ type Campaign = {
   id: number;
   campaign_name: string;
   description: string;
-  logo_url: string | null; // <-- Add logo_url
+  logo_url: string | null;
 };
 
 export default function SupportPage() {
@@ -29,12 +29,7 @@ export default function SupportPage() {
   useEffect(() => {
     const fetchCampaign = async () => {
       if (!slug) return;
-      const { data } = await supabase
-        .from('campaigns')
-        .select('*')
-        .eq('slug', slug)
-        .single();
-      
+      const { data } = await supabase.from('campaigns').select('*').eq('slug', slug).single();
       if(data) setCampaign(data);
       setLoading(false);
     };
@@ -42,19 +37,25 @@ export default function SupportPage() {
   }, [supabase, slug]);
   
   const handlePurchase = async () => {
-    // ... (This function remains the same)
     if (!user) {
       router.push(`/login?redirect_to=/support/${slug}`);
       return;
     }
     setProcessing(true);
+    
+    const salePrice = 25.00;
+    const fundraiserShare = salePrice * 0.70; // Calculate 70% share
     const expires_at = new Date();
     expires_at.setFullYear(expires_at.getFullYear() + 1);
+
     const { error } = await supabase.from('memberships').insert({
       user_id: user.id,
       campaign_id: campaign!.id,
       expires_at: expires_at.toISOString(),
+      sale_price: salePrice,        // <-- Save the sale price
+      fundraiser_share: fundraiserShare,   // <-- Save the 70% share
     });
+
     if (error) {
       alert('Error: Could not complete your membership. Please try again.');
       setProcessing(false);
@@ -73,8 +74,6 @@ export default function SupportPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 md:p-8">
       <div className="w-full max-w-2xl text-center">
-        
-        {/* --- DISPLAY TEAM LOGO --- */}
         {campaign.logo_url && (
             <img 
               src={campaign.logo_url} 
@@ -82,8 +81,6 @@ export default function SupportPage() {
               className="w-32 h-32 object-contain rounded-full mx-auto mb-4 bg-white shadow-lg border" 
             />
         )}
-        {/* ------------------------- */}
-        
         <p className="text-lg text-gray-600">You are supporting:</p>
         <h1 className="text-4xl font-bold text-slate-900 my-2">
           {campaign.campaign_name}
