@@ -1,9 +1,21 @@
-import { createClient } from '@/lib/supabase/server';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 
 /* eslint-disable @next/next/no-img-element */
 
-// A small reusable component for the "How it Works" section
+// Define a type for our deals to help with TypeScript
+type Deal = {
+  id: number;
+  title: string;
+  description: string;
+  businesses: {
+    business_name: string;
+  } | null;
+};
+
 const HowItWorksStep = ({ num, title, description }: { num: string, title: string, description: string }) => (
   <div className="flex">
     <div className="flex flex-col items-center mr-4">
@@ -21,13 +33,26 @@ const HowItWorksStep = ({ num, title, description }: { num: string, title: strin
   </div>
 );
 
+export default function HomePage() {
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClientComponentClient();
 
-export default async function HomePage() {
-  const supabase = createClient();
-  const { data: deals } = await supabase.from('deals').select(`
-    *,
-    businesses ( business_name )
-  `).limit(6); // Let's limit it to 6 for a cleaner look
+  useEffect(() => {
+    const fetchDeals = async () => {
+      setLoading(true);
+      const { data } = await supabase.from('deals').select(`
+        *,
+        businesses ( business_name )
+      `).limit(6);
+
+      if (data) {
+        setDeals(data as Deal[]);
+      }
+      setLoading(false);
+    };
+    fetchDeals();
+  }, [supabase]);
 
   return (
     <main className="bg-white">
@@ -86,15 +111,16 @@ export default async function HomePage() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-extrabold text-gray-900">A Preview of Your Savings</h2>
-            <p className="text-lg text-gray-600 mt-2">Here's a taste of the deals you'll unlock when you become a member.</p>
+            <p className="text-lg text-gray-600 mt-2">Here&apos;s a taste of the savings you&apos;ll unlock when you become a member.</p>
           </div>
-          {deals && deals.length > 0 ? (
+          {loading ? (
+             <p className="text-center text-gray-500">Loading deals...</p>
+          ) : deals.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {deals.map((deal) => (
                 <div key={deal.id} className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
                   <h3 className="text-xl font-bold text-blue-700">{deal.title}</h3>
-                  {/* @ts-ignore */}
-                  <p className="text-md font-semibold text-gray-800 mt-1">at {deal.businesses.business_name}</p>
+                  <p className="text-md font-semibold text-gray-800 mt-1">at {deal.businesses?.business_name || 'Local Business'}</p>
                   <p className="text-gray-600 mt-3">{deal.description}</p>
                 </div>
               ))}
