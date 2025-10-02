@@ -31,54 +31,30 @@ export default function CampaignsPage() {
 
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
-    const { data: campaignsData, error: campaignsError } = await supabase
-      .from('campaigns')
-      .select('*')
-      .eq('organizer_id', userId)
-      .eq('status', view);
-
+    const { data: campaignsData, error: campaignsError } = await supabase.from('campaigns').select('*').eq('organizer_id', userId).eq('status', view);
     if (campaignsError || !campaignsData || campaignsData.length === 0) {
-      setCampaigns([]);
-      setLoading(false);
-      return;
+      setCampaigns([]); setLoading(false); return;
     }
-
     const campaignIds = campaignsData.map(c => c.id);
-    const { data: membershipsData } = await supabase
-      .from('memberships')
-      .select('*, profiles (full_name, email)')
-      .in('campaign_id', campaignIds);
-
-    const campaignsWithMemberships = campaignsData.map(campaign => {
-      return {
-        ...campaign,
-        memberships: membershipsData ? membershipsData.filter(m => m.campaign_id === campaign.id) : [],
-      };
-    });
-
+    const { data: membershipsData } = await supabase.from('memberships').select('*, profiles (full_name, email)').in('campaign_id', campaignIds);
+    const campaignsWithMemberships = campaignsData.map(campaign => ({
+      ...campaign,
+      memberships: membershipsData ? membershipsData.filter(m => m.campaign_id === campaign.id) : [],
+    }));
     setCampaigns(campaignsWithMemberships as Campaign[]);
     setLoading(false);
   }, [supabase, view]);
 
   useEffect(() => {
-    if (user) {
-      fetchCampaigns(user.id);
-    }
+    if (user) fetchCampaigns(user.id);
     if (!user && !userLoading) setLoading(false);
   }, [user, userLoading, fetchCampaigns]);
 
   const handleEndCampaign = async (campaignId: number) => {
     if (window.confirm('Are you sure you want to end this campaign? It will be moved to your "Past Campaigns" list.')) {
-      const { error } = await supabase
-        .from('campaigns')
-        .update({ status: 'ended' })
-        .eq('id', campaignId);
-
-      if (error) {
-        alert('Error ending campaign: ' + error.message);
-      } else {
-        if (user) fetchCampaigns(user.id);
-      }
+      const { error } = await supabase.from('campaigns').update({ status: 'ended' }).eq('id', campaignId);
+      if (error) { alert('Error ending campaign: ' + error.message); } 
+      else { if (user) fetchCampaigns(user.id); }
     }
   };
   
@@ -98,23 +74,10 @@ export default function CampaignsPage() {
 
   const shareOnTwitter = (campaign: Campaign) => {
     const shareUrl = `${window.location.origin}/support/${campaign.slug}`;
-    const text = `Support our fundraiser: ${campaign.campaign_name}! #funraisewny`;
+    const text = `Support our fundraiser for ${campaign.campaign_name}! #funraisewny`;
     const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
     window.open(twitterUrl, '_blank');
   };
-  
-  // --- ADDING THE FORMAT DATE FUNCTION BACK IN ---
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    // Adding UTC timezone to prevent off-by-one day errors
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'UTC',
-    });
-  };
-  // ---------------------------------------------
 
   if (loading || userLoading) {
     return <div className="p-8 text-center">Loading your campaigns...</div>;
@@ -142,12 +105,8 @@ export default function CampaignsPage() {
       
       <div className="mb-6 border-b border-gray-200">
         <nav className="-mb-px flex space-x-6">
-          <button onClick={() => setView('active')} className={`py-3 px-1 border-b-2 font-medium text-sm ${view === 'active' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
-            Active
-          </button>
-          <button onClick={() => setView('ended')} className={`py-3 px-1 border-b-2 font-medium text-sm ${view === 'ended' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
-            Past Campaigns
-          </button>
+          <button onClick={() => setView('active')} className={`py-3 px-1 border-b-2 font-medium text-sm ${view === 'active' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Active</button>
+          <button onClick={() => setView('ended')} className={`py-3 px-1 border-b-2 font-medium text-sm ${view === 'ended' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Past Campaigns</button>
         </nav>
       </div>
 
@@ -165,19 +124,10 @@ export default function CampaignsPage() {
                   <div>
                     <h2 className="text-2xl font-semibold">{campaign.campaign_name}</h2>
                     <p className="text-sm text-gray-500 mt-1">Goal: ${campaign.goal_amount.toLocaleString()}</p>
-                    {/* --- ADDING THE DATES BACK IN --- */}
-                    <div className="text-xs text-gray-400 mt-2 font-medium">
-                      <span>{formatDate(campaign.start_date)}</span> - <span>{formatDate(campaign.end_date)}</span>
-                    </div>
-                    {/* ----------------------------- */}
                   </div>
                   <div className="flex items-center space-x-4">
-                    {campaign.status === 'active' && (
-                      <Link href={`/campaigns/${campaign.id}/edit`} className="text-sm font-medium text-blue-600 hover:text-blue-800">Edit</Link>
-                    )}
-                    {campaign.status === 'active' && (
-                      <button onClick={() => handleEndCampaign(campaign.id)} className="text-sm font-medium text-red-600 hover:text-red-800">End Campaign</button>
-                    )}
+                    {campaign.status === 'active' && (<Link href={`/campaigns/${campaign.id}/edit`} className="text-sm font-medium text-blue-600 hover:text-blue-800">Edit</Link>)}
+                    {campaign.status === 'active' && (<button onClick={() => handleEndCampaign(campaign.id)} className="text-sm font-medium text-red-600 hover:text-red-800">End Campaign</button>)}
                   </div>
                 </div>
                 
@@ -188,6 +138,7 @@ export default function CampaignsPage() {
                      <button onClick={() => setActiveTab({...activeTab, [campaign.id]: 'share'})} className={`py-3 px-1 border-b-2 font-medium text-sm ${currentTab === 'share' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Share</button>
                    </nav>
                  </div>
+
                  <div className="mt-6">
                    {currentTab === 'stats' && (
                      <div>
@@ -198,6 +149,7 @@ export default function CampaignsPage() {
                        <div className="w-full bg-gray-200 rounded-full h-4"><div className="bg-green-600 h-4 rounded-full text-white text-xs flex items-center justify-center" style={{ width: `${progressPercentage > 100 ? 100 : progressPercentage}%` }}>{progressPercentage.toFixed(0)}%</div></div>
                      </div>
                    )}
+
                    {currentTab === 'supporters' && (
                      <div>
                        <h3 className="text-lg font-semibold">Supporter List</h3>
@@ -212,6 +164,7 @@ export default function CampaignsPage() {
                        ) : ( <p className="text-sm text-gray-500 mt-2">No supporters yet.</p> )}
                      </div>
                    )}
+
                    {currentTab === 'share' && (
                      <div>
                        <h3 className="text-lg font-semibold mb-2">Share Your Campaign</h3>
