@@ -13,7 +13,7 @@ const FeatureCard = ({ icon, title, children }: { icon: React.ReactNode, title: 
         <div className="text-gray-600 space-y-2">{children}</div>
     </div>
 );
-
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export default function HomePage() {
   return (
