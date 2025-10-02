@@ -22,18 +22,22 @@ type Deal = {
   } | null;
 };
 
+// Define the shape of the raw data returned from Supabase, including 'title'
+interface RawDealData {
+    id: number;
+    business_id: string;
+    title: string;
+    description: string;
+    fine_print: string | null;
+    status: string;
+    profiles: { 
+        full_name: string; 
+        logo_url: string | null; 
+    } | null;
+}
+
 // Placeholder Code for members (assuming a static membership model for now)
 const PLACEHOLDER_REDEEM_CODE = 'FUNRAISE-25';
-
-const FeatureCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
-    <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-        <div className="mx-auto w-14 h-14 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 mb-5">
-            {icon}
-        </div>
-        <h3 className="text-xl font-bold text-gray-900 mb-3">{title}</h3>
-        <div className="text-gray-600 space-y-2">{children}</div>
-    </div>
-);
 
 export default function DealsPage() {
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -64,9 +68,10 @@ export default function DealsPage() {
       setError('Failed to load deals. Please try again later.');
       setDeals([]);
     } else {
-      // FIX: Use a simple map and assertion to correctly name 'deal_name' from 'title',
-      // avoiding intermediate interfaces which caused the conflict.
-      const formattedDeals = (dealsData || []).map((deal: any) => ({
+      // Use an explicit cast to the RawDealData[] interface and map to the final Deal[] structure.
+      const rawDeals = dealsData as unknown as RawDealData[];
+
+      const formattedDeals: Deal[] = (rawDeals || []).map((deal) => ({
           id: deal.id,
           business_id: deal.business_id,
           // RENAME: Map DB column 'title' to application property 'deal_name'
@@ -77,7 +82,7 @@ export default function DealsPage() {
           profiles: deal.profiles,
       }));
       
-      setDeals(formattedDeals as Deal[]);
+      setDeals(formattedDeals);
     }
     setLoading(false);
   }, [supabase]);
