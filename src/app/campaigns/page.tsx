@@ -6,8 +6,6 @@ import useUser from '@/hooks/useUser';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 type Membership = {
-  id: number;
-  campaign_id: number;
   fundraiser_share: number;
   profiles: { full_name: string; email: string; } | null;
 };
@@ -31,11 +29,8 @@ export default function CampaignsPage() {
   const [activeTab, setActiveTab] = useState<{ [key: number]: string }>({});
   const supabase = createClientComponentClient();
 
-  // --- USING THE RELIABLE "TWO-QUERY WORKAROUND" ---
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
-
-    // Query 1: Get the user's campaigns based on the current view.
     const { data: campaignsData, error: campaignsError } = await supabase
       .from('campaigns')
       .select('*')
@@ -48,14 +43,12 @@ export default function CampaignsPage() {
       return;
     }
 
-    // Query 2: Get all memberships for those campaigns in a separate query.
     const campaignIds = campaignsData.map(c => c.id);
     const { data: membershipsData } = await supabase
       .from('memberships')
       .select('*, profiles (full_name, email)')
       .in('campaign_id', campaignIds);
 
-    // Manually "join" the data in our code.
     const campaignsWithMemberships = campaignsData.map(campaign => {
       return {
         ...campaign,
@@ -66,7 +59,6 @@ export default function CampaignsPage() {
     setCampaigns(campaignsWithMemberships as Campaign[]);
     setLoading(false);
   }, [supabase, view]);
-  // ----------------------------------------------------
 
   useEffect(() => {
     if (user) {
@@ -110,6 +102,19 @@ export default function CampaignsPage() {
     const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
     window.open(twitterUrl, '_blank');
   };
+  
+  // --- ADDING THE FORMAT DATE FUNCTION BACK IN ---
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    // Adding UTC timezone to prevent off-by-one day errors
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    });
+  };
+  // ---------------------------------------------
 
   if (loading || userLoading) {
     return <div className="p-8 text-center">Loading your campaigns...</div>;
@@ -160,6 +165,11 @@ export default function CampaignsPage() {
                   <div>
                     <h2 className="text-2xl font-semibold">{campaign.campaign_name}</h2>
                     <p className="text-sm text-gray-500 mt-1">Goal: ${campaign.goal_amount.toLocaleString()}</p>
+                    {/* --- ADDING THE DATES BACK IN --- */}
+                    <div className="text-xs text-gray-400 mt-2 font-medium">
+                      <span>{formatDate(campaign.start_date)}</span> - <span>{formatDate(campaign.end_date)}</span>
+                    </div>
+                    {/* ----------------------------- */}
                   </div>
                   <div className="flex items-center space-x-4">
                     {campaign.status === 'active' && (
@@ -178,7 +188,6 @@ export default function CampaignsPage() {
                      <button onClick={() => setActiveTab({...activeTab, [campaign.id]: 'share'})} className={`py-3 px-1 border-b-2 font-medium text-sm ${currentTab === 'share' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Share</button>
                    </nav>
                  </div>
-
                  <div className="mt-6">
                    {currentTab === 'stats' && (
                      <div>
@@ -189,7 +198,6 @@ export default function CampaignsPage() {
                        <div className="w-full bg-gray-200 rounded-full h-4"><div className="bg-green-600 h-4 rounded-full text-white text-xs flex items-center justify-center" style={{ width: `${progressPercentage > 100 ? 100 : progressPercentage}%` }}>{progressPercentage.toFixed(0)}%</div></div>
                      </div>
                    )}
-
                    {currentTab === 'supporters' && (
                      <div>
                        <h3 className="text-lg font-semibold">Supporter List</h3>
@@ -204,7 +212,6 @@ export default function CampaignsPage() {
                        ) : ( <p className="text-sm text-gray-500 mt-2">No supporters yet.</p> )}
                      </div>
                    )}
-
                    {currentTab === 'share' && (
                      <div>
                        <h3 className="text-lg font-semibold mb-2">Share Your Campaign</h3>
