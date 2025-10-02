@@ -9,7 +9,6 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 type Membership = {
   fundraiser_share: number;
   profiles: { full_name: string; email: string; } | null;
-  campaign_id: number; 
 };
 type Campaign = {
   id: number;
@@ -26,11 +25,9 @@ type Campaign = {
 const CopyIcon = ({ className = 'w-5 h-5' }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v2M9 17v-5"></path></svg>
 );
-
 const FacebookIcon = ({ className = 'w-5 h-5' }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.77-1.63 1.563V12h3.292l-.53 3.393h-2.762v6.987C18.343 21.128 22 16.991 22 12z" /></svg>
 );
-
 const TwitterIcon = ({ className = 'w-5 h-5' }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.883L4.99 21.75H1.68l7.228-8.26L1.5 2.25h3.308l5.98 7.859L17.65 2.25h.594zm-2.774 15.65H15.1l-6.573-7.737L5.438 4.25H6.96l6.32 7.464L18.244 2.25h-1.554z" /></svg>
 );
@@ -43,7 +40,6 @@ type ShareButtonProps = {
     bgColor: string;
     isCopied?: boolean;
 };
-
 const ShareButton: React.FC<ShareButtonProps> = ({ onClick, icon, label, bgColor, isCopied = false }) => (
     <button
         onClick={onClick}
@@ -66,44 +62,39 @@ export default function CampaignsPage() {
   const [activeTab, setActiveTab] = useState<{ [key: number]: string }>({}); 
   const supabase = createClientComponentClient();
 
+  // FIX: Rewritten to use a single, efficient query
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
 
-    const { data: campaignsData, error: campaignsError } = await supabase
+    const { data, error } = await supabase
       .from('campaigns')
-      .select('*')
+      .select(`
+        *,
+        memberships (
+          fundraiser_share,
+          profiles ( full_name, email )
+        )
+      `)
       .eq('organizer_id', userId)
       .eq('status', view);
 
-    if (campaignsError || !campaignsData || campaignsData.length === 0) {
+    if (error) {
+      console.error('Error fetching campaigns:', error);
       setCampaigns([]);
-      setLoading(false);
-      return;
+    } else {
+      setCampaigns(data as Campaign[]);
     }
 
-    const campaignIds = campaignsData.map(c => c.id);
-    const { data: membershipsData } = await supabase
-      .from('memberships')
-      .select('*, profiles (full_name, email)')
-      .in('campaign_id', campaignIds);
-
-    const campaignsWithMemberships = campaignsData.map(campaign => {
-      return {
-        ...campaign,
-        memberships: (membershipsData || []).filter((m): m is Membership => m.campaign_id === campaign.id) as Membership[],
-      };
-    });
-
-    setCampaigns(campaignsWithMemberships as Campaign[]);
     setLoading(false);
   }, [supabase, view]);
 
   useEffect(() => {
     if (user) {
       fetchCampaigns(user.id);
+    } else if (!userLoading) {
+      setLoading(false);
     }
-    if (!user && !userLoading) setLoading(false);
-  }, [user, userLoading, fetchCampaigns]);
+  }, [user, userLoading, view, fetchCampaigns]);
 
   const handleEndCampaign = async (campaignId: number) => {
     if (window.confirm('Are you sure you want to end this campaign? It will be moved to your "Past Campaigns" list.')) {
@@ -120,7 +111,6 @@ export default function CampaignsPage() {
     }
   };
   
-  // Utility to generate the full shareable URL
   const getShareLink = (slug: string): string => {
     if (typeof window === 'undefined') return '';
     return `${window.location.origin}/support/${slug}`;
@@ -198,7 +188,6 @@ export default function CampaignsPage() {
             const shareableLink = getShareLink(campaign.slug);
 
             return (
-              // Added bg-gray-50 to the main card div
               <div key={campaign.id} className={`bg-gray-50 p-6 rounded-lg shadow-md ${campaign.status === 'ended' ? 'opacity-70' : ''}`}>
                 <div className="flex justify-between items-start border-b border-gray-200 pb-4">
                   <div>
@@ -214,78 +203,69 @@ export default function CampaignsPage() {
                   </div>
                 </div>
                 
-                {/* --- Shared Link and Buttons (Modified) --- */}
-                {/* Removed bg-white from this div, as the parent now has bg-gray-50 */}
                 <div className="mt-4 p-4 rounded-lg border border-gray-200 shadow-sm">
-                    <h3 className="text-lg font-semibold mb-3 text-gray-700">Share Your Campaign</h3>
-                    
-                    {/* Removed the 'Your Shareable Link' paragraph and its label */}
-                    
-                    {/* Share Buttons */}
-                    <div className="mt-2 flex flex-wrap gap-3"> {/* Adjusted mt-4 to mt-2 for closer proximity */}
-                        <ShareButton
-                            onClick={() => handleCopyLink(campaign)}
-                            icon={<CopyIcon />}
-                            label="Copy Link"
-                            bgColor="bg-gray-600 hover:bg-gray-700"
-                            isCopied={copiedId === campaign.id}
-                        />
-                        <ShareButton
-                            onClick={() => shareOnFacebook(campaign)}
-                            icon={<FacebookIcon />}
-                            label="Facebook"
-                            bgColor="bg-blue-800 hover:bg-blue-900"
-                        />
-                        <ShareButton
-                            onClick={() => shareOnTwitter(campaign)}
-                            icon={<TwitterIcon />}
-                            label="X (Twitter)"
-                            bgColor="bg-sky-500 hover:bg-sky-600"
-                        />
-                        <a 
-                            href={`mailto:?subject=Support my fundraiser: ${campaign.campaign_name}&body=Please help me reach my goal for this great cause! Donate here: ${shareableLink}`}
-                            className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-red-500 rounded-md transition duration-150 ease-in-out hover:opacity-90"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 4v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7"></path></svg>
-                            <span>Email</span>
-                        </a>
-                    </div>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-700">Share Your Campaign</h3>
+                  <div className="mt-2 flex flex-wrap gap-3">
+                    <ShareButton
+                        onClick={() => handleCopyLink(campaign)}
+                        icon={<CopyIcon />}
+                        label="Copy Link"
+                        bgColor="bg-gray-600 hover:bg-gray-700"
+                        isCopied={copiedId === campaign.id}
+                    />
+                    <ShareButton
+                        onClick={() => shareOnFacebook(campaign)}
+                        icon={<FacebookIcon />}
+                        label="Facebook"
+                        bgColor="bg-blue-800 hover:bg-blue-900"
+                    />
+                    <ShareButton
+                        onClick={() => shareOnTwitter(campaign)}
+                        icon={<TwitterIcon />}
+                        label="X (Twitter)"
+                        bgColor="bg-sky-500 hover:bg-sky-600"
+                    />
+                    <a 
+                        href={`mailto:?subject=Support my fundraiser: ${campaign.campaign_name}&body=Please help me reach my goal for this great cause! Donate here: ${shareableLink}`}
+                        className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-red-500 rounded-md transition duration-150 ease-in-out hover:opacity-90"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 4v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7"></path></svg>
+                        <span>Email</span>
+                    </a>
+                  </div>
                 </div>
-                {/* --- End Shared Link and Buttons --- */}
 
-
-                {/* --- Tabs Section --- */}
                 <div className="mt-4 border-b border-gray-200">
-                    <nav className="-mb-px flex space-x-6" aria-label="Tabs">
-                      <button onClick={() => setActiveTab({...activeTab, [campaign.id]: 'stats'})} className={`py-3 px-1 border-b-2 font-medium text-sm ${currentTab === 'stats' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Stats</button>
-                      <button onClick={() => setActiveTab({...activeTab, [campaign.id]: 'supporters'})} className={`py-3 px-1 border-b-2 font-medium text-sm ${currentTab === 'supporters' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Supporters ({supportersCount})</button>
-                    </nav>
+                  <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+                    <button onClick={() => setActiveTab({...activeTab, [campaign.id]: 'stats'})} className={`py-3 px-1 border-b-2 font-medium text-sm ${currentTab === 'stats' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Stats</button>
+                    <button onClick={() => setActiveTab({...activeTab, [campaign.id]: 'supporters'})} className={`py-3 px-1 border-b-2 font-medium text-sm ${currentTab === 'supporters' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Supporters ({supportersCount})</button>
+                  </nav>
                 </div>
 
                 <div className="mt-6">
-                    {currentTab === 'stats' && (
-                      <div>
-                        <div className="flex justify-between items-end mb-1">
-                          <p className="text-3xl font-bold text-green-600">${totalRaised.toLocaleString()}</p>
-                          <p className="text-sm text-gray-500">{supportersCount} {supportersCount === 1 ? 'supporter' : 'supporters'}</p>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-4"><div className="bg-green-600 h-4 rounded-full text-white text-xs flex items-center justify-center" style={{ width: `${progressPercentage > 100 ? 100 : progressPercentage}%` }}>{progressPercentage.toFixed(0)}%</div></div>
+                  {currentTab === 'stats' && (
+                    <div>
+                      <div className="flex justify-between items-end mb-1">
+                        <p className="text-3xl font-bold text-green-600">${totalRaised.toLocaleString()}</p>
+                        <p className="text-sm text-gray-500">{supportersCount} {supportersCount === 1 ? 'supporter' : 'supporters'}</p>
                       </div>
-                    )}
-                    {currentTab === 'supporters' && (
-                      <div>
-                        <h3 className="text-lg font-semibold">Supporter List</h3>
-                        {supportersCount > 0 ? (
-                          <ul className="mt-4 space-y-2 text-sm text-gray-700 max-h-48 overflow-y-auto">
-                            {campaign.memberships.map((m, index) => (
-                              <li key={index} className="p-2 bg-gray-50 rounded">
-                                <strong>{m.profiles?.full_name || 'Anonymous Supporter'}</strong> (Raised: ${m.fundraiser_share.toLocaleString()})
-                              </li>
-                            ))}
-                          </ul>
-                        ) : ( <p className="text-sm text-gray-500 mt-2">No supporters yet.</p> )}
-                      </div>
-                    )}
+                      <div className="w-full bg-gray-200 rounded-full h-4"><div className="bg-green-600 h-4 rounded-full text-white text-xs flex items-center justify-center" style={{ width: `${progressPercentage > 100 ? 100 : progressPercentage}%` }}>{progressPercentage.toFixed(0)}%</div></div>
+                    </div>
+                  )}
+                  {currentTab === 'supporters' && (
+                    <div>
+                      <h3 className="text-lg font-semibold">Supporter List</h3>
+                      {supportersCount > 0 ? (
+                        <ul className="mt-4 space-y-2 text-sm text-gray-700 max-h-48 overflow-y-auto">
+                          {campaign.memberships.map((m, index) => (
+                            <li key={index} className="p-2 bg-gray-50 rounded">
+                              <strong>{m.profiles?.full_name || 'Anonymous Supporter'}</strong> (Raised: ${m.fundraiser_share.toLocaleString()})
+                            </li>
+                          ))}
+                        </ul>
+                      ) : ( <p className="text-sm text-gray-500 mt-2">No supporters yet.</p> )}
+                    </div>
+                  )}
                 </div>
               </div>
             );
