@@ -12,17 +12,19 @@ type UserProfile = {
   loading: boolean;
 };
 
-type SupabaseResponse = { data: any; error: any };
+// FIX: Replaced 'any' with 'unknown' to satisfy the no-explicit-any linting rule.
+type SupabaseResponse = { data: unknown; error: unknown };
 
-// FIX: safeQuery is moved outside the hook to make it a stable utility function.
+// safeQuery is moved outside the hook to make it a stable utility function.
 const safeQuery = async (queryPromise: Promise<SupabaseResponse>): Promise<{ data: boolean; error: boolean }> => {
   try {
     const result = await queryPromise;
-    if (result.error && result.error.code !== 'PGRST116') {
+    // FIX: Added a type assertion to safely access the 'code' property on the 'unknown' error type.
+    if (result.error && (result.error as { code: string }).code !== 'PGRST116') {
       console.warn('SafeQuery non-critical error:', result.error);
       return { data: false, error: true };
     }
-    const hasData = result.data !== null && (Array.isArray(result.data) ? result.data.length > 0 : Object.keys(result.data).length > 0);
+    const hasData = result.data !== null && (Array.isArray(result.data) ? result.data.length > 0 : Object.keys(result.data as object).length > 0);
     return { data: hasData, error: false };
   } catch (e) {
     console.error('SafeQuery exception:', e);
@@ -50,9 +52,9 @@ export default function useUser(): UserProfile {
       ]);
       
       const [merchantData, fundraiserData, memberData] = await Promise.all([
-        safeQuery(Promise.resolve(merchantRes)),
-        safeQuery(Promise.resolve(fundraiserRes)),
-        safeQuery(Promise.resolve(memberRes))
+        safeQuery(Promise.resolve(merchantRes as SupabaseResponse)),
+        safeQuery(Promise.resolve(fundraiserRes as SupabaseResponse)),
+        safeQuery(Promise.resolve(memberRes as SupabaseResponse))
       ]);
 
       setIsMerchant(merchantData.data);
@@ -69,6 +71,7 @@ export default function useUser(): UserProfile {
   useEffect(() => {
     getUserProfile();
     const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
+      // Re-fetch profile data when auth state changes
       setUser(session?.user ?? null);
       getUserProfile();
     });
