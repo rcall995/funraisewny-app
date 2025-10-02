@@ -1,198 +1,89 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 
 /* eslint-disable @next/next/no-img-element */
 
-// --- Type Definitions for Deals/Businesses ---
-type Deal = {
-  id: number;
-  deal_name: string; 
-  description: string;
-  fine_print: string | null; 
-  status: string;
-  business_id: string; 
-  // FIX: Updated profiles to be nested under businesses
-  businesses: {
-    business_name: string;
-    profiles: { 
-      full_name: string; // User's name associated with the business profile
-      logo_url: string | null; 
-    } | null;
-  } | null;
-};
-
-// Define the shape of the raw data returned from Supabase, including nested tables
-interface RawDealData {
-    id: number;
-    business_id: string;
-    title: string;
-    description: string;
-    fine_print: string | null;
-    status: string;
-    // FIX: Updated structure to reflect the nested join
-    businesses: { 
-        business_name: string;
-        profiles: { 
-            full_name: string; 
-            logo_url: string | null; 
-        } | null;
-    } | null;
-}
-
-// Placeholder Code for members (assuming a static membership model for now)
-const PLACEHOLDER_REDEEM_CODE = 'FUNRAISE-25';
-
-export default function DealsPage() {
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const supabase = createClientComponentClient();
-
-  const fetchDeals = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    
-    // FIX: Rewrite select statement for chained join: 
-    // deals -> businesses (via business_id) -> profiles (via owner_id assumed in profiles)
-    const { data: dealsData, error: dbError } = await supabase
-      .from('deals')
-      .select(`
-        id, 
-        business_id, 
-        title, 
-        description, 
-        fine_print, 
-        status,
-        businesses (
-          business_name,
-          profiles (
-            full_name, 
-            logo_url
-          )
-        )
-      `)
-      .eq('status', 'active'); 
-
-    if (dbError) {
-      console.error('Error fetching deals:', dbError);
-      setError('Failed to load deals. Please try again later. (Database Error)');
-      setDeals([]);
-    } else {
-      // Use an explicit cast to the RawDealData[] interface and map to the final Deal[] structure.
-      const rawDeals = dealsData as unknown as RawDealData[];
-
-      const formattedDeals: Deal[] = (rawDeals || []).map((deal) => {
-        
-        // This is necessary to handle the nested data structure
-        const businessName = deal.businesses?.business_name || 'Partnering Business';
-        const profileData = deal.businesses?.profiles || null;
-        
-        return {
-            id: deal.id,
-            business_id: deal.business_id,
-            // RENAME: Map DB column 'title' to application property 'deal_name'
-            deal_name: deal.title, 
-            description: deal.description,
-            fine_print: deal.fine_print,
-            status: deal.status,
-            // Pass the entire businesses object which contains the nested profile
-            businesses: deal.businesses, 
-        };
-      });
-      
-      setDeals(formattedDeals);
-    }
-    setLoading(false);
-  }, [supabase]);
-
-  useEffect(() => {
-    fetchDeals();
-  }, [fetchDeals]);
-
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <p className="text-xl text-gray-600">Loading current deals...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <p className="text-red-500 text-xl">{error}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 py-10">
-      <div className="container mx-auto p-4 max-w-4xl">
-        <h1 className="text-4xl font-extrabold text-center text-gray-800 mb-2">Exclusive Member Deals</h1>
-        <p className="text-center text-lg text-gray-600 mb-10">Use your membership code to redeem these local offers!</p>
-
-        {deals.length === 0 ? (
-          <div className="text-center p-12 bg-white rounded-xl shadow-lg">
-            <h2 className="text-2xl font-semibold text-gray-700">No active deals right now!</h2>
-            <p className="mt-4 text-gray-500">Check back soon for new discounts from our partners.</p>
-          </div>
-        ) : (
-          <div className="grid gap-6">
-            {deals.map((deal) => (
-              <div key={deal.id} className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 flex flex-col md:flex-row items-start space-y-4 md:space-y-0 md:space-x-6 hover:shadow-xl transition-shadow duration-300">
-                
-                {/* Logo or Placeholder: Use business.profiles.logo_url */}
-                {deal.businesses?.profiles?.logo_url ? (
-                  <img
-                    src={deal.businesses.profiles.logo_url}
-                    alt={`${deal.businesses.profiles.full_name} logo`}
-                    className="w-20 h-20 object-contain rounded-lg border flex-shrink-0"
-                  />
-                ) : (
-                    <div className="w-20 h-20 object-contain rounded-lg border flex-shrink-0 bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">
-                        {deal.businesses?.business_name?.charAt(0) || 'B'}
-                    </div>
-                )}
-                
-                <div className="flex-grow">
-                  {/* Accessing the corrected property: deal.deal_name */}
-                  <h2 className="text-2xl font-bold text-blue-800">{deal.deal_name}</h2>
-                  <p className="text-lg text-gray-600 mt-1">
-                    {/* Display Business Name (from the businesses table) */}
-                    <strong className="font-semibold">{deal.businesses?.business_name || 'Partnering Business'}</strong>
-                  </p>
-                  <p className="mt-3 text-gray-700">{deal.description}</p>
-                  
-                  {/* Fine Print / Redemption Terms */}
-                  {deal.fine_print && (
-                    <p className="mt-2 text-sm italic text-gray-500">
-                        * {deal.fine_print}
-                    </p>
-                  )}
-
-                  {/* Redemption Code */}
-                  <div className="mt-4 pt-3 border-t border-dashed border-gray-200">
-                    <p className="text-sm font-medium text-gray-500 mb-2">Your Member Code:</p>
-                    <p className="bg-green-100 text-green-800 font-mono text-lg px-4 py-2 rounded-lg inline-block select-all">
-                      {PLACEHOLDER_REDEEM_CODE}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="text-center mt-12">
-            <Link href="/for-businesses" className="text-blue-600 hover:underline">
-                Are you a business interested in offering a deal?? Learn more here.
-            </Link>
+const FeatureCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
+    <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+        <div className="mx-auto w-14 h-14 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 mb-5">
+            {icon}
         </div>
-      </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-3">{title}</h3>
+        <div className="text-gray-600 space-y-2">{children}</div>
     </div>
+);
+
+export default function HomePage() {
+  return (
+    <main className="bg-white">
+      {/* Hero Section (Reverted to Marketing Content) */}
+      <section className="text-center py-20 md:py-28 px-4 bg-gray-50">
+        <div className="container mx-auto max-w-4xl">
+          <img
+            src="/image_acafef.png"
+            alt="FunraiseWNY Logo"
+            className="w-4/5 h-auto max-w-[300px] md:h-56 md:w-auto md:max-w-none mx-auto mb-8"
+            // Note: Add placeholder.svg if image_acafef.png is missing:
+            onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
+          />
+          <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
+            The Easiest Way to Fundraise in Western New York.
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-10">
+            We connect local groups with community-minded businesses to create fundraisers that people actually love.
+          </p>
+          <div className="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4">
+            <Link href="/for-fundraisers" className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg shadow-xl hover:bg-green-700 transition duration-300 inline-block text-center text-lg">
+              I&apos;m a Fundraiser
+            </Link>
+            <Link href="/for-businesses" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-300 inline-block text-center text-lg">
+              I&apos;m a Business
+            </Link>
+          </div>
+        </div>
+      </section>
+      
+      {/* "Why Partner With Us?" Section */}
+      <section className="py-24 px-4">
+        <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-16">
+                <h2 className="text-4xl font-extrabold text-gray-900">A Better Way to Raise Money & Grow Your Business</h2>
+                <p className="text-lg text-gray-600 mt-2 max-w-3xl mx-auto">FunraiseWNY is built to be a win for everyone. Here&apos;s how our partners benefit.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                
+                {/* For Fundraisers Card */}
+                <FeatureCard 
+                    title="For Fundraisers"
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
+                >
+                    <p>✅ **High Profit Share:** Keep a large portion of every membership sold.</p>
+                    <p>✅ **No Inventory:** Say goodbye to handling products, order forms, and deliveries.</p>
+                    <p>✅ **A Product People Want:** Offer your community a full year of savings at their favorite local spots.</p>
+                </FeatureCard>
+
+                {/* For Businesses Card */}
+                <FeatureCard 
+                    title="For Businesses"
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2V7"/></svg>}
+                >
+                    <p>✅ **Zero Upfront Cost:** Get featured on our platform for free. It&apos;s risk-free marketing.</p>
+                    <p>✅ **Attract New Customers:** Drive loyal, community-minded supporters through your door.</p>
+                    <p>✅ **Build Goodwill:** Show your support for local schools, teams, and organizations.</p>
+                </FeatureCard>
+
+            </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-800 text-white py-6 px-4">
+        <div className="container mx-auto text-center text-sm">
+          <p className="mb-2">© 2025 Funraise WNY. All Rights Reserved.</p>
+          <p className="text-gray-400">Made with ❤️ in Buffalo, NY.</p>
+        </div>
+      </footer>
+    </main>
   );
 }
