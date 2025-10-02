@@ -24,10 +24,14 @@ export default function MerchantPage() {
     const [profile, setProfile] = useState<BusinessProfile | null>(null);
     const [pageLoading, setPageLoading] = useState(true);
     const [isEditingProfile, setIsEditingProfile] = useState(false);
+    // Added state for general Supabase data error display
+    const [dbError, setDbError] = useState<string | null>(null);
 
     // 1. Fetch Existing Profile
     const fetchProfile = useCallback(async (userId: string) => {
         setPageLoading(true);
+        setDbError(null);
+
         const { data, error } = await supabase
             .from('businesses')
             .select('id, business_name, address, phone, logo_url') // Selects the new logo_url field
@@ -36,6 +40,8 @@ export default function MerchantPage() {
 
         if (error && error.code !== 'PGRST116') { // PGRST116 is 'No rows found'
             console.error('Error loading business profile:', error);
+            // FIX: Displaying the specific Supabase error code to the user
+            setDbError(`Error Code: ${error.code}. Check RLS or DB schema.`); 
         }
 
         if (data) {
@@ -79,6 +85,14 @@ export default function MerchantPage() {
         <div className="min-h-screen bg-gray-50 py-10">
             <div className="container mx-auto p-4 max-w-2xl">
                 <h1 className="text-3xl font-bold text-gray-800 mb-6">Merchant Dashboard</h1>
+
+                {dbError && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+                        <strong className="font-bold">Database Access Error:</strong>
+                        <span className="block sm:inline ml-2">{dbError}</span>
+                        <p className="text-sm mt-1">Please verify your table schemas and Foreign Key constraints.</p>
+                    </div>
+                )}
 
                 {/* Profile Form / View Container */}
                 <div className="bg-white p-6 rounded-lg shadow-xl">
