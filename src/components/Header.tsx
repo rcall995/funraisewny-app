@@ -3,13 +3,20 @@
 import Link from 'next/link';
 import useUser from '@/hooks/useUser';
 import SignOutButton from '@/components/SignOutButton';
+import { usePathname } from 'next/navigation'; // <-- 1. Import the hook
 
 /* eslint-disable @next/next/no-img-element */
 
 export default function Header() {
-  // Our hook now gives us all the role information we need!
   const { user, loading, isMerchant, isFundraiser, isMember } = useUser();
+  const pathname = usePathname(); // <-- 2. Get the current page's path
 
+  // 3. If we are on the login page, render nothing at all.
+  if (pathname === '/login') {
+    return null;
+  }
+
+  // Otherwise, render the appropriate header.
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <nav className="container mx-auto px-6 py-3 flex justify-between items-center">
@@ -26,7 +33,6 @@ export default function Header() {
           ) : user ? (
             // --- LOGGED-IN VIEW ---
             <>
-              {/* If they are a member, show a link to the deals on the homepage */}
               {isMember && (
                 <Link href="/" className="text-gray-600 hover:text-blue-600">View Deals</Link>
               )}
@@ -38,7 +44,6 @@ export default function Header() {
                  <Link href="/campaigns" className="text-gray-600 hover:text-blue-600">Fundraiser Portal</Link>
               )}
               
-              {/* Fallback link to the main hub if they have no specific roles yet */}
               {!isMerchant && !isFundraiser && (
                   <Link href="/dashboard" className="text-gray-600 hover:text-blue-600">My Dashboard</Link>
               )}
