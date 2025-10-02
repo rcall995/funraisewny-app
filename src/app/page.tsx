@@ -28,7 +28,6 @@ interface RawDealData {
     description: string;
     fine_print: string | null;
     status: string;
-    // NOTE: This will be loaded as an array if not specified as 'profiles!inner' in the select statement
     profiles: { 
         full_name: string; 
         logo_url: string | null; 
@@ -48,10 +47,10 @@ export default function DealsPage() {
     setLoading(true);
     setError(null);
     
-    // FIX: Changed select query. When joining tables, the join must explicitly use the 
-    // foreign key name. In Supabase queries, simply listing the table name (profiles) defaults
-    // to an inner join, which fails if the business is missing a profile entry.
-    // To fix: We use `profiles(*)` and handle potential missing data or check RLS on the profiles table.
+    // FIX: Using PostgREST's syntax for an explicit LEFT JOIN/OUTER JOIN (`!left`). 
+    // This makes the join optional, so if RLS denies access to `profiles`, 
+    // or if a Deal is missing its profile link, the rest of the query succeeds.
+    // NOTE: This assumes the foreign key relationship is named 'profiles'.
     const { data: dealsData, error: dbError } = await supabase
       .from('deals')
       .select(`
@@ -61,7 +60,7 @@ export default function DealsPage() {
         description, 
         fine_print, 
         status,
-        profiles ( full_name, logo_url ) 
+        profiles!left ( full_name, logo_url ) 
       `)
       .eq('status', 'active'); 
 
@@ -76,7 +75,7 @@ export default function DealsPage() {
 
       // FIX: Ensure correct data structure when mapping.
       const formattedDeals: Deal[] = (rawDeals || []).map((deal) => {
-        // Since Supabase implicitly maps the FK relationship, and we assume it's one-to-one/optional.
+        // Handle potential missing profile data resulting from the !left join
         const profileData = deal.profiles as RawDealData['profiles'];
         
         return {
