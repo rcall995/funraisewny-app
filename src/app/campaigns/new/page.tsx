@@ -82,11 +82,19 @@ export default function NewCampaignPage() {
     });
 
     setLoading(false);
+
+    // --- NEW ERROR HANDLING LOGIC ---
     if (error) {
-      setMessage('Error creating campaign: ' + error.message);
+      // Check if the error is the specific 'duplicate key' error
+      if (error.message.includes('duplicate key value violates unique constraint')) {
+        setMessage('This Shareable Link Name is already taken. Please choose a different one.');
+      } else {
+        setMessage('Error creating campaign: ' + error.message);
+      }
     } else {
       router.push('/campaigns');
     }
+    // --------------------------------
   };
 
   if (userLoading) {
@@ -104,9 +112,7 @@ export default function NewCampaignPage() {
           </div>
           <div>
               <label htmlFor="slug" className="block text-sm font-medium text-gray-700">Shareable Link Name</label>
-              {/* --- NEW SUGGESTION TEXT --- */}
-              <p className="text-xs text-gray-500 mt-1">Keep it short and simple. This will be part of your public URL.</p>
-              {/* ------------------------- */}
+              <p className="text-xs text-gray-500 mt-1">Keep it simple, e.g., "stallions-football-2025". No spaces or special characters.</p>
               <div className="flex items-center mt-1">
                   <span className="text-gray-500 text-sm bg-gray-100 p-2 rounded-l-md border border-r-0">funraisewny.com/support/</span>
                   <input id="slug" type="text" value={slug} onChange={(e) => setSlug(generateSlug(e.target.value))} className="block w-full px-3 py-2 border border-gray-300 rounded-r-md shadow-sm"/>
