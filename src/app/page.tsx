@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 /* eslint-disable @next/next/no-img-element */
 
+// A small reusable component for the feature cards
 const FeatureCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
     <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
         <div className="mx-auto w-14 h-14 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 mb-5">
@@ -33,16 +34,16 @@ export default function HomePage() {
             We connect local groups with community-minded businesses to create fundraisers that people actually love.
           </p>
           <div className="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4">
-             <Link href="/login" className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg shadow-xl hover:bg-green-700 transition duration-300 inline-block text-center text-lg">
-              Start a Fundraiser
+             <Link href="/for-fundraisers" className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg shadow-xl hover:bg-green-700 transition duration-300 inline-block text-center text-lg">
+              I'm a Fundraiser
             </Link>
-            <Link href="/login" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-300 inline-block text-center text-lg">
-              Feature Your Business
+            <Link href="/for-businesses" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-300 inline-block text-center text-lg">
+              I'm a Business
             </Link>
           </div>
         </div>
       </section>
-
+      
       {/* "Why Partner With Us?" Section */}
       <section className="py-24 px-4">
         <div className="container mx-auto max-w-6xl">
@@ -55,7 +56,6 @@ export default function HomePage() {
                 {/* For Fundraisers Card */}
                 <FeatureCard 
                     title="For Fundraisers"
-                    // --- NEW USERS ICON ---
                     icon={<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
                 >
                     <p>✅ **High Profit Share:** Keep a large portion of every membership sold.</p>
@@ -66,7 +66,6 @@ export default function HomePage() {
                 {/* For Businesses Card */}
                 <FeatureCard 
                     title="For Businesses"
-                    // --- NEW STORE ICON ---
                     icon={<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2V7"/></svg>}
                 >
                     <p>✅ **Zero Upfront Cost:** Get featured on our platform for free. It&apos;s risk-free marketing.</p>
