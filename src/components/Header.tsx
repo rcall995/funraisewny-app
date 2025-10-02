@@ -7,39 +7,49 @@ import SignOutButton from '@/components/SignOutButton';
 /* eslint-disable @next/next/no-img-element */
 
 export default function Header() {
-  const { user, loading } = useUser();
+  // Our hook now gives us all the role information we need!
+  const { user, loading, isMerchant, isFundraiser, isMember } = useUser();
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <nav className="container mx-auto px-6 py-3 flex justify-between items-center">
         <Link href="/">
           <img 
-            src="/image_acafef.png" // Assumes image is in 'public' folder
+            src="/image_acafef.png"
             alt="FunraiseWNY Logo"
             className="h-10 w-auto"
           />
         </Link>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 font-medium text-sm">
           {loading ? (
-            // Shows a placeholder while checking auth status
             <div className="h-8 w-36 bg-gray-200 rounded animate-pulse"></div>
           ) : user ? (
-            // If a user is logged in, show these links
+            // --- LOGGED-IN VIEW ---
             <>
-              <Link href="/dashboard" className="text-gray-600 hover:text-blue-600 font-medium">
-                Dashboard
-              </Link>
+              {/* If they are a member, show a link to the deals on the homepage */}
+              {isMember && (
+                <Link href="/" className="text-gray-600 hover:text-blue-600">View Deals</Link>
+              )}
+              
+              {isMerchant && (
+                <Link href="/merchant" className="text-gray-600 hover:text-blue-600">Merchant Portal</Link>
+              )}
+              {isFundraiser && (
+                 <Link href="/campaigns" className="text-gray-600 hover:text-blue-600">Fundraiser Portal</Link>
+              )}
+              
+              {/* Fallback link to the main hub if they have no specific roles yet */}
+              {!isMerchant && !isFundraiser && (
+                  <Link href="/dashboard" className="text-gray-600 hover:text-blue-600">My Dashboard</Link>
+              )}
+
               <SignOutButton />
             </>
           ) : (
-            // If a user is logged out, show these links
+            // --- LOGGED-OUT VIEW ---
             <>
-              <Link href="/login" className="text-gray-600 hover:text-blue-600 font-medium">
-                Login
-              </Link>
-              <Link href="/login" className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">
-                Sign Up
-              </Link>
+              <Link href="/login" className="text-gray-600 hover:text-blue-600">Login</Link>
+              <Link href="/login" className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Sign Up</Link>
             </>
           )}
         </div>
