@@ -23,7 +23,8 @@ export default function HomePage() {
           <img
             src="/image_acafef.png"
             alt="FunraiseWNY Logo"
-            className="h-16 w-auto" 
+            // FIX: Uses h-16 (from Header component) and mx-auto for centering
+            className="w-auto h-16 mx-auto mb-8" 
             onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
           />
           <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
@@ -32,11 +33,13 @@ export default function HomePage() {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-10">
             We connect local groups with community-minded businesses to create fundraisers that people actually love.
           </p>
+          
+          {/* FIX: Uses flex-1 on both links to enforce equal width */}
           <div className="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4">
-            <Link href="/for-fundraisers" className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg shadow-xl hover:bg-green-700 transition duration-300 inline-block text-center text-lg">
+            <Link href="/for-fundraisers" className="flex-1 px-8 py-3 bg-green-600 text-white font-bold rounded-lg shadow-xl hover:bg-green-700 transition duration-300 inline-block text-center text-lg max-w-xs mx-auto md:max-w-none">
               Start a Fundraiser
             </Link>
-            <Link href="/for-businesses" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-300 inline-block text-center text-lg">
+            <Link href="/for-businesses" className="flex-1 px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-300 inline-block text-center text-lg max-w-xs mx-auto md:max-w-none">
               Partner My Business
             </Link>
           </div>
