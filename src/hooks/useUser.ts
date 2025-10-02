@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { User } from '@supabase/supabase-js';
 
@@ -19,14 +19,19 @@ export default function useUser(): UserProfile {
   const [loading, setLoading] = useState(true);
 
   // Helper function to safely execute a Supabase query that might fail due to RLS/policies
-  const safeQuery = async (queryPromise: Promise<any>): Promise<any> => {
+  // FIX: Replaced 'any' with 'unknown' for safer, linting-compliant handling of unknown return types.
+  const safeQuery = async (queryPromise: Promise<unknown>): Promise<unknown> => {
     try {
-      const { data, error } = await queryPromise;
-      if (error && error.code !== 'PGRST116') {
+      // Cast the result as unknown to then access its properties safely
+      const result = await queryPromise as { data: any, error: any }; 
+      
+      if (result.error && result.error.code !== 'PGRST116') {
         // Log the error but don't crash or throw, return failure state
-        console.warn('SafeQuery encountered non-critical error:', error);
+        console.warn('SafeQuery encountered non-critical error:', result.error);
         return { data: null, error: true };
       }
+      
+      const data = result.data;
       // Return true if data exists (not null and not an empty array)
       const hasData = data && (Array.isArray(data) ? data.length > 0 : !!data);
       return { data: hasData, error: false };
@@ -47,23 +52,21 @@ export default function useUser(): UserProfile {
       // 1. Check for Merchant Status
       const merchantRes = await safeQuery(
         supabase.from('businesses').select('id').eq('owner_id', user.id).single()
-      );
-      const isUserMerchant = !!merchantRes.data;
+      ) as { data: boolean }; // Expecting the custom query object structure
+      const isUserMerchant = merchantRes.data;
       setIsMerchant(isUserMerchant);
 
-      // 2. Perform other checks only if user is NOT a Merchant, 
-      // or if we need to support multi-role users (which we assume we do here).
-      // However, we run them safely to prevent the 406s from crashing the UI/looping.
+      // 2. Perform other checks
       
       const [fundraiserRes, memberRes] = await Promise.all([
         // Check for a campaign
-        safeQuery(supabase.from('campaigns').select('id').eq('organizer_id', user.id).limit(1).single()),
+        safeQuery(supabase.from('campaigns').select('id').eq('organizer_id', user.id).limit(1).single()) as { data: boolean },
         // Check for an active membership
-        safeQuery(supabase.from('memberships').select('id').eq('user_id', user.id).gte('expires_at', new Date().toISOString()).limit(1).single())
+        safeQuery(supabase.from('memberships').select('id').eq('user_id', user.id).gte('expires_at', new Date().toISOString()).limit(1).single()) as { data: boolean }
       ]);
 
-      setIsFundraiser(!!fundraiserRes.data);
-      setIsMember(!!memberRes.data);
+      setIsFundraiser(fundraiserRes.data);
+      setIsMember(memberRes.data);
     } else {
       setIsMerchant(false);
       setIsFundraiser(false);
