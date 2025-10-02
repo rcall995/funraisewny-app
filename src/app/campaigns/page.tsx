@@ -6,6 +6,8 @@ import useUser from '@/hooks/useUser';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 type Membership = {
+  id: number;
+  campaign_id: number;
   fundraiser_share: number;
   profiles: { full_name: string; email: string; } | null;
 };
@@ -29,27 +31,48 @@ export default function CampaignsPage() {
   const [activeTab, setActiveTab] = useState<{ [key: number]: string }>({});
   const supabase = createClientComponentClient();
 
+  // --- USING THE RELIABLE "TWO-QUERY WORKAROUND" ---
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
-    const { data } = await supabase
+
+    // Query 1: Get the user's campaigns based on the current view.
+    const { data: campaignsData, error: campaignsError } = await supabase
       .from('campaigns')
-      .select(`*, memberships!left ( *, profiles (full_name, email) )`)
+      .select('*')
       .eq('organizer_id', userId)
       .eq('status', view);
-    
-    if (data) {
-      setCampaigns(data as Campaign[]);
+
+    if (campaignsError || !campaignsData || campaignsData.length === 0) {
+      setCampaigns([]);
+      setLoading(false);
+      return;
     }
+
+    // Query 2: Get all memberships for those campaigns in a separate query.
+    const campaignIds = campaignsData.map(c => c.id);
+    const { data: membershipsData } = await supabase
+      .from('memberships')
+      .select('*, profiles (full_name, email)')
+      .in('campaign_id', campaignIds);
+
+    // Manually "join" the data in our code.
+    const campaignsWithMemberships = campaignsData.map(campaign => {
+      return {
+        ...campaign,
+        memberships: membershipsData ? membershipsData.filter(m => m.campaign_id === campaign.id) : [],
+      };
+    });
+
+    setCampaigns(campaignsWithMemberships as Campaign[]);
     setLoading(false);
   }, [supabase, view]);
+  // ----------------------------------------------------
 
   useEffect(() => {
     if (user) {
       fetchCampaigns(user.id);
     }
-    if (!user && !userLoading) {
-      setLoading(false);
-    }
+    if (!user && !userLoading) setLoading(false);
   }, [user, userLoading, fetchCampaigns]);
 
   const handleEndCampaign = async (campaignId: number) => {
@@ -155,44 +178,47 @@ export default function CampaignsPage() {
                      <button onClick={() => setActiveTab({...activeTab, [campaign.id]: 'share'})} className={`py-3 px-1 border-b-2 font-medium text-sm ${currentTab === 'share' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Share</button>
                    </nav>
                  </div>
+
                  <div className="mt-6">
-                    {currentTab === 'stats' && (
-                        <div>
-                        <div className="flex justify-between items-end mb-1">
-                            <p className="text-3xl font-bold text-green-600">${totalRaised.toLocaleString()}</p>
-                            <p className="text-sm text-gray-500">{supportersCount} {supportersCount === 1 ? 'supporter' : 'supporters'}</p>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-4"><div className="bg-green-600 h-4 rounded-full text-white text-xs flex items-center justify-center" style={{ width: `${progressPercentage > 100 ? 100 : progressPercentage}%` }}>{progressPercentage.toFixed(0)}%</div></div>
-                        </div>
-                    )}
-                    {currentTab === 'supporters' && (
-                        <div>
-                        <h3 className="text-lg font-semibold">Supporter List</h3>
-                        {supportersCount > 0 ? (
-                            <ul className="mt-4 space-y-2 text-sm text-gray-700">
-                            {campaign.memberships.map((m, index) => (
-                                <li key={index} className="p-2 bg-gray-50 rounded">
-                                {m.profiles?.full_name || 'Anonymous Supporter'} ({m.profiles?.email || 'No email provided'})
-                                </li>
-                            ))}
-                            </ul>
-                        ) : ( <p className="text-sm text-gray-500 mt-2">No supporters yet.</p> )}
-                        </div>
-                    )}
-                    {currentTab === 'share' && (
-                        <div>
-                        <h3 className="text-lg font-semibold mb-2">Share Your Campaign</h3>
-                        <div className="p-3 bg-gray-100 rounded-md">
-                            <label className="text-xs font-semibold text-gray-500">Your Shareable Link:</label>
-                            <p className="text-sm text-blue-700 font-mono break-all">{`${typeof window !== 'undefined' ? window.location.origin : ''}/support/${campaign.slug}`}</p>
-                        </div>
-                        <div className="mt-4 flex flex-wrap gap-4">
-                            <button onClick={() => handleCopyLink(campaign)} className="px-4 py-2 text-sm font-semibold text-white bg-gray-600 rounded-md hover:bg-gray-700">{copiedId === campaign.id ? 'Copied!' : 'Copy Link'}</button>
-                            <button onClick={() => shareOnFacebook(campaign)} className="px-4 py-2 text-sm font-semibold text-white bg-blue-800 rounded-md hover:bg-blue-900">Share on Facebook</button>
-                            <button onClick={() => shareOnTwitter(campaign)} className="px-4 py-2 text-sm font-semibold text-white bg-sky-500 rounded-md hover:bg-sky-600">Share on Twitter</button>
-                        </div>
-                        </div>
-                    )}
+                   {currentTab === 'stats' && (
+                     <div>
+                       <div className="flex justify-between items-end mb-1">
+                         <p className="text-3xl font-bold text-green-600">${totalRaised.toLocaleString()}</p>
+                         <p className="text-sm text-gray-500">{supportersCount} {supportersCount === 1 ? 'supporter' : 'supporters'}</p>
+                       </div>
+                       <div className="w-full bg-gray-200 rounded-full h-4"><div className="bg-green-600 h-4 rounded-full text-white text-xs flex items-center justify-center" style={{ width: `${progressPercentage > 100 ? 100 : progressPercentage}%` }}>{progressPercentage.toFixed(0)}%</div></div>
+                     </div>
+                   )}
+
+                   {currentTab === 'supporters' && (
+                     <div>
+                       <h3 className="text-lg font-semibold">Supporter List</h3>
+                       {supportersCount > 0 ? (
+                         <ul className="mt-4 space-y-2 text-sm text-gray-700">
+                           {campaign.memberships.map((m, index) => (
+                             <li key={index} className="p-2 bg-gray-50 rounded">
+                               {m.profiles?.full_name || 'Anonymous Supporter'} ({m.profiles?.email || 'No email provided'})
+                             </li>
+                           ))}
+                         </ul>
+                       ) : ( <p className="text-sm text-gray-500 mt-2">No supporters yet.</p> )}
+                     </div>
+                   )}
+
+                   {currentTab === 'share' && (
+                     <div>
+                       <h3 className="text-lg font-semibold mb-2">Share Your Campaign</h3>
+                       <div className="p-3 bg-gray-100 rounded-md">
+                         <label className="text-xs font-semibold text-gray-500">Your Shareable Link:</label>
+                         <p className="text-sm text-blue-700 font-mono break-all">{`${typeof window !== 'undefined' ? window.location.origin : ''}/support/${campaign.slug}`}</p>
+                       </div>
+                       <div className="mt-4 flex flex-wrap gap-4">
+                         <button onClick={() => handleCopyLink(campaign)} className="px-4 py-2 text-sm font-semibold text-white bg-gray-600 rounded-md hover:bg-gray-700">{copiedId === campaign.id ? 'Copied!' : 'Copy Link'}</button>
+                         <button onClick={() => shareOnFacebook(campaign)} className="px-4 py-2 text-sm font-semibold text-white bg-blue-800 rounded-md hover:bg-blue-900">Share on Facebook</button>
+                         <button onClick={() => shareOnTwitter(campaign)} className="px-4 py-2 text-sm font-semibold text-white bg-sky-500 rounded-md hover:bg-sky-600">Share on Twitter</button>
+                       </div>
+                     </div>
+                   )}
                  </div>
               </div>
             );
