@@ -14,13 +14,17 @@ type Deal = {
   fine_print: string | null; 
   status: string;
   business_id: string; 
-  profiles: { 
-    full_name: string; // Business Name
-    logo_url: string | null; 
+  // FIX: Updated profiles to be nested under businesses
+  businesses: {
+    business_name: string;
+    profiles: { 
+      full_name: string; // User's name associated with the business profile
+      logo_url: string | null; 
+    } | null;
   } | null;
 };
 
-// Define the shape of the raw data returned from Supabase, including 'title'
+// Define the shape of the raw data returned from Supabase, including nested tables
 interface RawDealData {
     id: number;
     business_id: string;
@@ -28,9 +32,13 @@ interface RawDealData {
     description: string;
     fine_print: string | null;
     status: string;
-    profiles: { 
-        full_name: string; 
-        logo_url: string | null; 
+    // FIX: Updated structure to reflect the nested join
+    businesses: { 
+        business_name: string;
+        profiles: { 
+            full_name: string; 
+            logo_url: string | null; 
+        } | null;
     } | null;
 }
 
@@ -47,14 +55,8 @@ export default function DealsPage() {
     setLoading(true);
     setError(null);
     
-    // FIX: Explicitly specifying the relationship to link 'deals' to 'profiles' via 'business_id'.
-    // The syntax is `alias!reference_column!join_type(columns)`.
-    // Since 'business_id' is the column name in 'deals', and we assume the foreign table is 'profiles', we use 'profiles!deals_business_id_fkey!left'
-    // I am using the simplified syntax that generally works if the FK constraint is named by convention (e.g., deals_business_id_fkey).
-    // Let's rely on the explicit column naming first, which is often sufficient: profiles!left(full_name, logo_url)
-    // If the join fails, the safest thing is to only query the local columns first and debug the join in the Supabase API testing tool.
-    
-    // I will try the explicit column reference syntax which usually resolves the 400 error.
+    // FIX: Rewrite select statement for chained join: 
+    // deals -> businesses (via business_id) -> profiles (via owner_id assumed in profiles)
     const { data: dealsData, error: dbError } = await supabase
       .from('deals')
       .select(`
@@ -64,24 +66,29 @@ export default function DealsPage() {
         description, 
         fine_print, 
         status,
-        // *** FINAL ATTEMPT AT EXPLICIT JOIN SYNTAX FIX ***
-        profiles!deals_business_id_fkey!left ( full_name, logo_url )
+        businesses (
+          business_name,
+          profiles (
+            full_name, 
+            logo_url
+          )
+        )
       `)
       .eq('status', 'active'); 
 
     if (dbError) {
       console.error('Error fetching deals:', dbError);
-      // RLS/Network errors often end up here.
-      // NOTE: If this fails again, it confirms RLS is the problem.
-      setError('Failed to load deals. Please try again later.');
+      setError('Failed to load deals. Please try again later. (Database Error)');
       setDeals([]);
     } else {
       // Use an explicit cast to the RawDealData[] interface and map to the final Deal[] structure.
       const rawDeals = dealsData as unknown as RawDealData[];
 
       const formattedDeals: Deal[] = (rawDeals || []).map((deal) => {
-        // Handle potential missing profile data resulting from the !left join
-        const profileData = deal.profiles as RawDealData['profiles'];
+        
+        // This is necessary to handle the nested data structure
+        const businessName = deal.businesses?.business_name || 'Partnering Business';
+        const profileData = deal.businesses?.profiles || null;
         
         return {
             id: deal.id,
@@ -91,7 +98,8 @@ export default function DealsPage() {
             description: deal.description,
             fine_print: deal.fine_print,
             status: deal.status,
-            profiles: profileData
+            // Pass the entire businesses object which contains the nested profile
+            businesses: deal.businesses, 
         };
       });
       
@@ -137,16 +145,16 @@ export default function DealsPage() {
             {deals.map((deal) => (
               <div key={deal.id} className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 flex flex-col md:flex-row items-start space-y-4 md:space-y-0 md:space-x-6 hover:shadow-xl transition-shadow duration-300">
                 
-                {/* Logo or Placeholder */}
-                {deal.profiles?.logo_url ? (
+                {/* Logo or Placeholder: Use business.profiles.logo_url */}
+                {deal.businesses?.profiles?.logo_url ? (
                   <img
-                    src={deal.profiles.logo_url}
-                    alt={`${deal.profiles.full_name} logo`}
+                    src={deal.businesses.profiles.logo_url}
+                    alt={`${deal.businesses.profiles.full_name} logo`}
                     className="w-20 h-20 object-contain rounded-lg border flex-shrink-0"
                   />
                 ) : (
                     <div className="w-20 h-20 object-contain rounded-lg border flex-shrink-0 bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">
-                        {deal.profiles?.full_name?.charAt(0) || 'B'}
+                        {deal.businesses?.business_name?.charAt(0) || 'B'}
                     </div>
                 )}
                 
@@ -154,7 +162,8 @@ export default function DealsPage() {
                   {/* Accessing the corrected property: deal.deal_name */}
                   <h2 className="text-2xl font-bold text-blue-800">{deal.deal_name}</h2>
                   <p className="text-lg text-gray-600 mt-1">
-                    <strong className="font-semibold">{deal.profiles?.full_name || 'Partnering Business'}</strong>
+                    {/* Display Business Name (from the businesses table) */}
+                    <strong className="font-semibold">{deal.businesses?.business_name || 'Partnering Business'}</strong>
                   </p>
                   <p className="mt-3 text-gray-700">{deal.description}</p>
                   
