@@ -5,6 +5,13 @@ import Link from 'next/link';
 import useUser from '@/hooks/useUser';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
+type Membership = {
+  fundraiser_share: number;
+  profiles: {
+    full_name: string;
+    email: string;
+  } | null;
+};
 type Campaign = {
   id: number;
   slug: string;
@@ -12,7 +19,7 @@ type Campaign = {
   goal_amount: number;
   start_date: string | null;
   end_date: string | null;
-  memberships: { fundraiser_share: number }[];
+  memberships: Membership[];
 };
 
 export default function CampaignsPage() {
@@ -26,13 +33,15 @@ export default function CampaignsPage() {
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
     // --- THIS IS THE CORRECTED QUERY ---
-    // By adding '!left', we tell the database to return campaigns
-    // even if they have no associated memberships yet.
+    // It now correctly fetches all membership columns AND the related profile data.
     const { data } = await supabase
       .from('campaigns')
       .select(`
         *,
-        memberships!left ( fundraiser_share )
+        memberships!left (
+          *,
+          profiles ( full_name, email )
+        )
       `)
       .eq('organizer_id', userId)
       .eq('status', 'active');
@@ -58,8 +67,18 @@ export default function CampaignsPage() {
     });
   };
 
-  const shareOnFacebook = (campaign: Campaign) => { /* ... */ };
-  const shareOnTwitter = (campaign: Campaign) => { /* ... */ };
+  const shareOnFacebook = (campaign: Campaign) => {
+    const shareUrl = `${window.location.origin}/support/${campaign.slug}`;
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    window.open(fbUrl, '_blank');
+  };
+
+  const shareOnTwitter = (campaign: Campaign) => {
+    const shareUrl = `${window.location.origin}/support/${campaign.slug}`;
+    const text = `Support our fundraiser: ${campaign.campaign_name}! #funraisewny`;
+    const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
+    window.open(twitterUrl, '_blank');
+  };
 
   if (loading || userLoading) {
     return <div className="p-8 text-center">Loading your campaigns...</div>;
@@ -104,7 +123,7 @@ export default function CampaignsPage() {
                 </div>
 
                 <div className="mt-4 border-b">
-                  <nav className="-mb-px flex space-x-6">
+                  <nav className="-mb-px flex space-x-6" aria-label="Tabs">
                     <button onClick={() => setActiveTab({...activeTab, [campaign.id]: 'stats'})} className={`py-3 px-1 border-b-2 font-medium text-sm ${currentTab === 'stats' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
                       Stats
                     </button>
@@ -129,18 +148,18 @@ export default function CampaignsPage() {
                   )}
 
                   {currentTab === 'supporters' && (
-                     <div>
-                       <h3 className="text-lg font-semibold">Supporter List</h3>
-                       {supportersCount > 0 ? (
-                         <ul className="mt-4 space-y-2 text-sm text-gray-700">
-                           {campaign.memberships.map((m, index) => (
-                             <li key={index} className="p-2 bg-gray-50 rounded">
-                               {m.profiles?.full_name || 'Anonymous'} ({m.profiles?.email || 'No email'})
-                             </li>
-                           ))}
-                         </ul>
-                       ) : ( <p className="text-sm text-gray-500 mt-2">No supporters yet.</p> )}
-                     </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Supporter List</h3>
+                      {supportersCount > 0 ? (
+                        <ul className="mt-4 space-y-2 text-sm text-gray-700">
+                          {campaign.memberships.map((m, index) => (
+                            <li key={index} className="p-2 bg-gray-50 rounded">
+                              {m.profiles?.full_name || 'Anonymous Supporter'} ({m.profiles?.email || 'No email provided'})
+                            </li>
+                          ))}
+                        </ul>
+                      ) : ( <p className="text-sm text-gray-500 mt-2">No supporters yet.</p> )}
+                    </div>
                   )}
 
                   {currentTab === 'share' && (
@@ -171,7 +190,3 @@ export default function CampaignsPage() {
     </div>
   );
 }
-
-// Minimal placeholder functions to satisfy TypeScript
-function shareOnFacebook(campaign: Campaign) {}
-function shareOnTwitter(campaign: Campaign) {}
