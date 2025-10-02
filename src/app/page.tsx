@@ -1,58 +1,18 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 
 /* eslint-disable @next/next/no-img-element */
 
-// Define a type for our deals to help with TypeScript
-type Deal = {
-  id: number;
-  title: string;
-  description: string;
-  businesses: {
-    business_name: string;
-  } | null;
-};
-
-const HowItWorksStep = ({ num, title, description }: { num: string, title: string, description: string }) => (
-  <div className="flex">
-    <div className="flex flex-col items-center mr-4">
-      <div>
-        <div className="flex items-center justify-center w-10 h-10 border rounded-full">
-          <p className="text-xl font-bold text-gray-800">{num}</p>
+const FeatureCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
+    <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+        <div className="mx-auto w-14 h-14 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 mb-5">
+            {icon}
         </div>
-      </div>
-      <div className="w-px h-full bg-gray-300"></div>
+        <h3 className="text-xl font-bold text-gray-900 mb-3">{title}</h3>
+        <div className="text-gray-600 space-y-2">{children}</div>
     </div>
-    <div className="pb-8">
-      <p className="mb-2 text-xl font-bold text-gray-900">{title}</p>
-      <p className="text-gray-700">{description}</p>
-    </div>
-  </div>
 );
 
 export default function HomePage() {
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const supabase = createClientComponentClient();
-
-  useEffect(() => {
-    const fetchDeals = async () => {
-      setLoading(true);
-      const { data } = await supabase.from('deals').select(`
-        *,
-        businesses ( business_name )
-      `).limit(6);
-
-      if (data) {
-        setDeals(data as Deal[]);
-      }
-      setLoading(false);
-    };
-    fetchDeals();
-  }, [supabase]);
 
   return (
     <main className="bg-white">
@@ -62,7 +22,7 @@ export default function HomePage() {
           <img
             src="/image_acafef.png"
             alt="FunraiseWNY Logo"
-            className="h-16 md:h-20 w-auto mx-auto mb-8"
+            className="h-20 md:h-24 w-auto mx-auto mb-8" // Increased size
           />
           <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
             The Easiest Way to Fundraise in Western New York.
@@ -81,53 +41,36 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-2xl">
-          <div className="text-center mb-16">
-              <h2 className="text-4xl font-extrabold text-gray-900">A Simple Plan for Big Results</h2>
-              <p className="text-lg text-gray-600 mt-2">Everyone in the community wins.</p>
-          </div>
-          <HowItWorksStep 
-            num="1" 
-            title="Groups & Businesses Partner Up" 
-            description="Local businesses offer exclusive deals on our platform for free. Fundraisers sign up and create a campaign in minutes."
-          />
-          <HowItWorksStep 
-            num="2" 
-            title="Share & Support" 
-            description="Fundraisers share their unique campaign link. Supporters buy a 1-year membership, with a large portion of the proceeds going directly to the group."
-          />
-          <HowItWorksStep 
-            num="3" 
-            title="Save at Local Favorites" 
-            description="Members unlock a full year of amazing deals at all participating WNY businesses, saving money while supporting their community."
-          />
-        </div>
-      </section>
-      
-      {/* Deal Preview Section */}
-      <section className="py-20 px-4 bg-gray-50">
+      {/* --- NEW "Why Partner With Us?" Section --- */}
+      <section className="py-24 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-extrabold text-gray-900">A Preview of Your Savings</h2>
-            <p className="text-lg text-gray-600 mt-2">Here&apos;s a taste of the savings you&apos;ll unlock when you become a member.</p>
-          </div>
-          {loading ? (
-             <p className="text-center text-gray-500">Loading deals...</p>
-          ) : deals.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {deals.map((deal) => (
-                <div key={deal.id} className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-                  <h3 className="text-xl font-bold text-blue-700">{deal.title}</h3>
-                  <p className="text-md font-semibold text-gray-800 mt-1">at {deal.businesses?.business_name || 'Local Business'}</p>
-                  <p className="text-gray-600 mt-3">{deal.description}</p>
-                </div>
-              ))}
+            <div className="text-center mb-16">
+                <h2 className="text-4xl font-extrabold text-gray-900">A Better Way to Raise Money & Grow Your Business</h2>
+                <p className="text-lg text-gray-600 mt-2 max-w-3xl mx-auto">FunraiseWNY is built to be a win for everyone. Here’s how our partners benefit.</p>
             </div>
-          ) : (
-            <p className="text-center text-gray-500">Deals are being added now. Check back soon!</p>
-          )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                
+                {/* For Fundraisers Card */}
+                <FeatureCard 
+                    title="For Fundraisers"
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5A2.5 2.5 0 0 1 2 6.5V2H0"/><path d="M18 9h-1.5A2.5 2.5 0 0 0 14 6.5V2H12"/><path d="M8 11l4-8 4 8H8z"/><path d="M14 11v6a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-6"/></svg>}
+                >
+                    <p>✅ **High Profit Share:** Keep a large portion of every membership sold.</p>
+                    <p>✅ **No Inventory:** Say goodbye to handling products, order forms, and deliveries.</p>
+                    <p>✅ **A Product People Want:** Offer your community a full year of savings at their favorite local spots.</p>
+                </FeatureCard>
+
+                {/* For Businesses Card */}
+                <FeatureCard 
+                    title="For Businesses"
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/><path d="M16 14l-4 4-6-6-4 4"/></svg>}
+                >
+                    <p>✅ **Zero Upfront Cost:** Get featured on our platform for free. It's risk-free marketing.</p>
+                    <p>✅ **Attract New Customers:** Drive loyal, community-minded supporters through your door.</p>
+                    <p>✅ **Build Goodwill:** Show your support for local schools, teams, and organizations.</p>
+                </FeatureCard>
+
+            </div>
         </div>
       </section>
 

@@ -3,20 +3,18 @@
 import Link from 'next/link';
 import useUser from '@/hooks/useUser';
 import SignOutButton from '@/components/SignOutButton';
-import { usePathname } from 'next/navigation'; // <-- 1. Import the hook
+import { usePathname } from 'next/navigation';
 
 /* eslint-disable @next/next/no-img-element */
 
 export default function Header() {
   const { user, loading, isMerchant, isFundraiser, isMember } = useUser();
-  const pathname = usePathname(); // <-- 2. Get the current page's path
+  const pathname = usePathname();
 
-  // 3. If we are on the login page, render nothing at all.
   if (pathname === '/login') {
     return null;
   }
 
-  // Otherwise, render the appropriate header.
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <nav className="container mx-auto px-6 py-3 flex justify-between items-center">
@@ -24,7 +22,7 @@ export default function Header() {
           <img 
             src="/image_acafef.png"
             alt="FunraiseWNY Logo"
-            className="h-10 w-auto"
+            className="h-12 w-auto" // Increased size from h-10 to h-12
           />
         </Link>
         <div className="flex items-center space-x-4 font-medium text-sm">
@@ -36,18 +34,15 @@ export default function Header() {
               {isMember && (
                 <Link href="/" className="text-gray-600 hover:text-blue-600">View Deals</Link>
               )}
-              
               {isMerchant && (
                 <Link href="/merchant" className="text-gray-600 hover:text-blue-600">Merchant Portal</Link>
               )}
               {isFundraiser && (
                  <Link href="/campaigns" className="text-gray-600 hover:text-blue-600">Fundraiser Portal</Link>
               )}
-              
               {!isMerchant && !isFundraiser && (
                   <Link href="/dashboard" className="text-gray-600 hover:text-blue-600">My Dashboard</Link>
               )}
-
               <SignOutButton />
             </>
           ) : (
