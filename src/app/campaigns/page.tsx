@@ -71,6 +71,7 @@ export default function CampaignsPage() {
     });
   };
 
+  
   const shareOnFacebook = (campaign: Campaign) => {
     const shareUrl = `${window.location.origin}/support/${campaign.slug}`;
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
