@@ -5,14 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import useUser from '@/hooks/useUser';
 
-// A helper function to create a URL-friendly slug
-const generateSlug = (name: string) => {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '') // remove special characters
-    .replace(/\s+/g, '-')          // replace spaces with hyphens
-    .replace(/-+/g, '-');          // remove multiple hyphens
-};
+const generateSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
 
 export default function NewCampaignPage() {
   const supabase = createClientComponentClient();
@@ -53,7 +46,8 @@ export default function NewCampaignPage() {
 
     if (logoFile) {
       const fileName = `${user.id}-${Date.now()}-${logoFile.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      // Fix: Removed the unused 'uploadData' variable
+      const { error: uploadError } = await supabase.storage
         .from('campaign-logos')
         .upload(fileName, logoFile);
 
@@ -82,10 +76,7 @@ export default function NewCampaignPage() {
     });
 
     setLoading(false);
-
-    // --- NEW ERROR HANDLING LOGIC ---
     if (error) {
-      // Check if the error is the specific 'duplicate key' error
       if (error.message.includes('duplicate key value violates unique constraint')) {
         setMessage('This Shareable Link Name is already taken. Please choose a different one.');
       } else {
@@ -94,7 +85,6 @@ export default function NewCampaignPage() {
     } else {
       router.push('/campaigns');
     }
-    // --------------------------------
   };
 
   if (userLoading) {
@@ -112,7 +102,7 @@ export default function NewCampaignPage() {
           </div>
           <div>
               <label htmlFor="slug" className="block text-sm font-medium text-gray-700">Shareable Link Name</label>
-              <p className="text-xs text-gray-500 mt-1">Keep it simple, e.g., "stallions-football-2025". No spaces or special characters.</p>
+              <p className="text-xs text-gray-500 mt-1">Keep it simple, e.g., &quot;stallions-football-2025&quot;. No spaces or special characters.</p>
               <div className="flex items-center mt-1">
                   <span className="text-gray-500 text-sm bg-gray-100 p-2 rounded-l-md border border-r-0">funraisewny.com/support/</span>
                   <input id="slug" type="text" value={slug} onChange={(e) => setSlug(generateSlug(e.target.value))} className="block w-full px-3 py-2 border border-gray-300 rounded-r-md shadow-sm"/>
