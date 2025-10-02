@@ -1,68 +1,64 @@
 'use client';
 
-import { useState, useEffect, } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import useUser from '@/hooks/useUser';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+
+/* eslint-disable @next/next/no-img-element */
 
 type Campaign = {
   id: number;
   campaign_name: string;
+  description: string;
+  logo_url: string | null; // <-- Add logo_url
 };
 
 export default function SupportPage() {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(false); // For the button
+  const [processing, setProcessing] = useState(false);
   
   const supabase = createClientComponentClient();
   const router = useRouter();
   const params = useParams();
   const { user } = useUser();
-  const campaignId = params.campaignId;
+  const slug = params.slug as string;
 
-  // Fetch the campaign data
   useEffect(() => {
     const fetchCampaign = async () => {
-      if (!campaignId) return;
+      if (!slug) return;
       const { data } = await supabase
         .from('campaigns')
-        .select('id, campaign_name')
-        .eq('id', campaignId)
+        .select('*')
+        .eq('slug', slug)
         .single();
       
       if(data) setCampaign(data);
       setLoading(false);
     };
     fetchCampaign();
-  }, [supabase, campaignId]);
+  }, [supabase, slug]);
   
   const handlePurchase = async () => {
-    // 1. Check if user is logged in
+    // ... (This function remains the same)
     if (!user) {
-      // If not logged in, redirect to the login page.
-      // We'll also pass a 'redirect_to' query param so we can come back here after login.
-      router.push(`/login?redirect_to=/support/${campaignId}`);
+      router.push(`/login?redirect_to=/support/${slug}`);
       return;
     }
-
-    // 2. Simulate the purchase
     setProcessing(true);
     const expires_at = new Date();
-    expires_at.setFullYear(expires_at.getFullYear() + 1); // Membership expires in 1 year
-
+    expires_at.setFullYear(expires_at.getFullYear() + 1);
     const { error } = await supabase.from('memberships').insert({
       user_id: user.id,
-      campaign_id: campaignId,
+      campaign_id: campaign!.id,
       expires_at: expires_at.toISOString(),
     });
-
     if (error) {
       alert('Error: Could not complete your membership. Please try again.');
       setProcessing(false);
     } else {
-      // 3. On success, redirect to a thank you page
       router.push('/support/thank-you');
     }
   };
@@ -70,38 +66,40 @@ export default function SupportPage() {
   if (loading) {
     return <div className="p-8 text-center">Loading campaign...</div>;
   }
-
   if (!campaign) {
     return <div className="p-8 text-center">Campaign not found.</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center p-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 md:p-8">
       <div className="w-full max-w-2xl text-center">
+        
+        {/* --- DISPLAY TEAM LOGO --- */}
+        {campaign.logo_url && (
+            <img 
+              src={campaign.logo_url} 
+              alt={`${campaign.campaign_name} logo`}
+              className="w-32 h-32 object-contain rounded-full mx-auto mb-4 bg-white shadow-lg border" 
+            />
+        )}
+        {/* ------------------------- */}
+        
         <p className="text-lg text-gray-600">You are supporting:</p>
-        <h1 className="text-4xl font-bold text-slate-900 my-4">
+        <h1 className="text-4xl font-bold text-slate-900 my-2">
           {campaign.campaign_name}
         </h1>
+        <p className="text-gray-700 my-6 max-w-xl mx-auto">{campaign.description}</p>
+
         <div className="bg-white p-8 rounded-lg shadow-md mt-6">
           <h2 className="text-2xl font-semibold">Get Your FunraiseWNY Membership</h2>
-          <p className="text-gray-600 my-4">
-            Purchase a 1-year membership to unlock hundreds of local deals. A large portion of your purchase goes directly to supporting this fundraiser!
-          </p>
           <div className="my-6">
-            <span className="text-5xl font-bold">$25</span>
-            <span className="text-gray-500">/ year</span>
+            <span className="text-5xl font-bold">$25</span><span className="text-gray-500">/ year</span>
           </div>
-          <button 
-            onClick={handlePurchase}
-            disabled={processing}
-            className="w-full bg-green-600 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:bg-green-700 text-xl disabled:bg-gray-400"
-          >
-            {processing ? 'Processing...' : 'Purchase Membership'}
+          <button onClick={handlePurchase} disabled={processing} className="w-full bg-green-600 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:bg-green-700 text-xl disabled:bg-gray-400">
+            {processing ? 'Processing...' : 'Purchase & Support'}
           </button>
         </div>
-        <Link href="/" className="text-blue-600 hover:underline mt-8 inline-block">
-          See all available deals
-        </Link>
+        <Link href="/" className="text-blue-600 hover:underline mt-8 inline-block">See all available deals</Link>
       </div>
     </div>
   );
