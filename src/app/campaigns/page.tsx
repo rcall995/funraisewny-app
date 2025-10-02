@@ -30,11 +30,8 @@ export default function CampaignsPage() {
   const [activeTab, setActiveTab] = useState<{ [key: number]: string }>({});
   const supabase = createClientComponentClient();
 
-  // --- THIS IS THE NEW, ROBUST FETCH LOGIC ---
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
-
-    // Query 1: Get the user's campaigns. We know this works.
     const { data: campaignsData, error: campaignsError } = await supabase
       .from('campaigns')
       .select('*')
@@ -47,14 +44,12 @@ export default function CampaignsPage() {
       return;
     }
 
-    // Query 2: Get all memberships for those campaigns in a separate query.
     const campaignIds = campaignsData.map(c => c.id);
     const { data: membershipsData } = await supabase
       .from('memberships')
       .select('*, profiles (full_name, email)')
       .in('campaign_id', campaignIds);
 
-    // Manually "join" the data in our code.
     const campaignsWithMemberships = campaignsData.map(campaign => {
       return {
         ...campaign,
@@ -73,8 +68,7 @@ export default function CampaignsPage() {
     if (!user && !userLoading) setLoading(false);
   }, [user, userLoading, fetchCampaigns]);
 
-  // --- The rest of the file is unchanged ---
-
+  // --- THESE FUNCTIONS WERE MISSING ---
   const handleCopyLink = (campaign: Campaign) => {
     const link = `${window.location.origin}/support/${campaign.slug}`;
     navigator.clipboard.writeText(link).then(() => {
@@ -82,7 +76,7 @@ export default function CampaignsPage() {
       setTimeout(() => setCopiedId(null), 2000);
     });
   };
-
+  
   const shareOnFacebook = (campaign: Campaign) => {
     const shareUrl = `${window.location.origin}/support/${campaign.slug}`;
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
@@ -95,6 +89,7 @@ export default function CampaignsPage() {
     const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
     window.open(twitterUrl, '_blank');
   };
+  // ------------------------------------
 
   if (loading || userLoading) {
     return <div className="p-8 text-center">Loading your campaigns...</div>;
@@ -146,7 +141,7 @@ export default function CampaignsPage() {
                     <button onClick={() => setActiveTab({...activeTab, [campaign.id]: 'supporters'})} className={`py-3 px-1 border-b-2 font-medium text-sm ${currentTab === 'supporters' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
                       Supporters ({supportersCount})
                     </button>
-                    <button onClick={() => setActiveTab({...activeTab, [campaign.id]: 'share'})} className={`py-3 px-1 border-b-2 font-medium text-sm ${currentTab === 'share' ? 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
+                    <button onClick={() => setActiveTab({...activeTab, [campaign.id]: 'share'})} className={`py-3 px-1 border-b-2 font-medium text-sm ${currentTab === 'share' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
                       Share
                     </button>
                   </nav>
