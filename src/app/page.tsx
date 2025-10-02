@@ -1,7 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 
 /* eslint-disable @next/next/no-img-element */
@@ -26,7 +24,8 @@ export default function HomePage() {
           <img
             src="/image_acafef.png"
             alt="FunraiseWNY Logo"
-            className="h-20 md:h-24 w-auto mx-auto mb-8"
+            // --- UPDATED RESPONSIVE CLASSES ---
+            className="w-4/5 h-auto max-w-[300px] md:h-56 md:w-auto md:max-w-none mx-auto mb-8"
           />
           <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
             The Easiest Way to Fundraise in Western New York.
@@ -50,7 +49,6 @@ export default function HomePage() {
         <div className="container mx-auto max-w-6xl">
             <div className="text-center mb-16">
                 <h2 className="text-4xl font-extrabold text-gray-900">A Better Way to Raise Money & Grow Your Business</h2>
-                {/* --- CORRECTED LINE --- */}
                 <p className="text-lg text-gray-600 mt-2 max-w-3xl mx-auto">FunraiseWNY is built to be a win for everyone. Here&apos;s how our partners benefit.</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -82,7 +80,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-6 px-4">
         <div className="container mx-auto text-center text-sm">
-          <p className="mb-2">© 2025 Funraise WNY. All Rights Reserved.</p>
+          <p className="mb-2">© 2025 FunraiseWNY. All Rights Reserved.</p>
           <p className="text-gray-400">Made with ❤️ in Buffalo, NY.</p>
         </div>
       </footer>

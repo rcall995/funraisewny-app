@@ -22,7 +22,7 @@ export default function Header() {
           <img 
             src="/image_acafef.png"
             alt="FunraiseWNY Logo"
-            className="h-12 w-auto" // Increased size from h-10 to h-12
+            className="h-16 w-auto" // Increased size from h-12 to h-16
           />
         </Link>
         <div className="flex items-center space-x-4 font-medium text-sm">
