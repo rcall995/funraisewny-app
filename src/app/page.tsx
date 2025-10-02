@@ -18,7 +18,6 @@ type Deal = {
   profiles: { 
     full_name: string; // Business Name
     logo_url: string | null; 
-    // The DB technically returns this field as 'title' but we convert it to 'deal_name' below.
   } | null;
 };
 
@@ -166,7 +165,7 @@ export default function DealsPage() {
           </div>
         )}
 
-        <div className="text-center mt-12">
+        <div className="text-center mt-14">
             <Link href="/for-businesses" className="text-blue-600 hover:underline">
                 Are you a business interested in offering a deal?? Learn more here.
             </Link>
