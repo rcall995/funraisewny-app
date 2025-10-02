@@ -198,7 +198,8 @@ export default function CampaignsPage() {
             const shareableLink = getShareLink(campaign.slug);
 
             return (
-              <div key={campaign.id} className={`bg-white p-6 rounded-lg shadow-md ${campaign.status === 'ended' ? 'opacity-70 bg-gray-50' : ''}`}>
+              // Added bg-gray-50 to the main card div
+              <div key={campaign.id} className={`bg-gray-50 p-6 rounded-lg shadow-md ${campaign.status === 'ended' ? 'opacity-70' : ''}`}>
                 <div className="flex justify-between items-start border-b border-gray-200 pb-4">
                   <div>
                     <h2 className="text-2xl font-semibold">{campaign.campaign_name}</h2>
@@ -213,18 +214,15 @@ export default function CampaignsPage() {
                   </div>
                 </div>
                 
-                {/* --- Shared Link and Buttons --- */}
-                <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                    <h3 className="text-lg font-semibold mb-2 text-gray-700">Share Your Campaign Link</h3>
+                {/* --- Shared Link and Buttons (Modified) --- */}
+                {/* Removed bg-white from this div, as the parent now has bg-gray-50 */}
+                <div className="mt-4 p-4 rounded-lg border border-gray-200 shadow-sm">
+                    <h3 className="text-lg font-semibold mb-3 text-gray-700">Share Your Campaign</h3>
                     
-                    {/* Shareable Link Display */}
-                    <div className="p-3 bg-gray-100 rounded-md border border-gray-200">
-                        <label className="text-xs font-semibold text-gray-500 block">Your Shareable Link:</label>
-                        <p className="text-sm text-blue-700 font-mono break-all">{shareableLink}</p>
-                    </div>
+                    {/* Removed the 'Your Shareable Link' paragraph and its label */}
                     
                     {/* Share Buttons */}
-                    <div className="mt-4 flex flex-wrap gap-3">
+                    <div className="mt-2 flex flex-wrap gap-3"> {/* Adjusted mt-4 to mt-2 for closer proximity */}
                         <ShareButton
                             onClick={() => handleCopyLink(campaign)}
                             icon={<CopyIcon />}
@@ -256,7 +254,7 @@ export default function CampaignsPage() {
                 {/* --- End Shared Link and Buttons --- */}
 
 
-                {/* --- Tabs Section (Now only has Stats and Supporters) --- */}
+                {/* --- Tabs Section --- */}
                 <div className="mt-4 border-b border-gray-200">
                     <nav className="-mb-px flex space-x-6" aria-label="Tabs">
                       <button onClick={() => setActiveTab({...activeTab, [campaign.id]: 'stats'})} className={`py-3 px-1 border-b-2 font-medium text-sm ${currentTab === 'stats' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Stats</button>
