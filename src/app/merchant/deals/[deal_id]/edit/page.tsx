@@ -22,7 +22,7 @@ export default function EditDealPage() {
     const supabase = createClientComponentClient();
     const router = useRouter();
     const params = useParams();
-    const { user, isMerchant } = useUser();
+    const { isMerchant } = useUser();
     
     // Get the deal ID from the URL
     const dealId = params.deal_id as string;

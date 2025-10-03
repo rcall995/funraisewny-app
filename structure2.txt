@@ -9,15 +9,17 @@ C:.
 |   package-lock.json
 |   package.json
 |   postcss.config.mjs
-|   project_structure.txt
 |   README.md
+|   structure2.txt
 |   tsconfig.json
 |   
 +---.next
 |   |   app-build-manifest.json
 |   |   build-manifest.json
 |   |   package.json
+|   |   prerender-manifest.json
 |   |   react-loadable-manifest.json
+|   |   routes-manifest.json
 |   |   trace
 |   |   
 |   +---cache
@@ -119,181 +121,32 @@ C:.
 |   |               index.pack
 |   |               index.pack.old
 |   |               
-|   +---diagnostics
-|   |       build-diagnostics.json
-|   |       framework.json
-|   |       
 |   +---server
-|   |   |   app-paths-manifest.json
-|   |   |   interception-route-rewrite-manifest.js
-|   |   |   middleware-build-manifest.js
-|   |   |   middleware-manifest.json
-|   |   |   middleware-react-loadable-manifest.js
-|   |   |   next-font-manifest.js
-|   |   |   next-font-manifest.json
-|   |   |   pages-manifest.json
-|   |   |   server-reference-manifest.js
-|   |   |   server-reference-manifest.json
-|   |   |   webpack-runtime.js
-|   |   |   
-|   |   +---app
-|   |   |   |   page.js
-|   |   |   |   page.js.nft.json
-|   |   |   |   page_client-reference-manifest.js
-|   |   |   |   
-|   |   |   +---campaigns
-|   |   |   |   |   page.js
-|   |   |   |   |   page.js.nft.json
-|   |   |   |   |   page_client-reference-manifest.js
-|   |   |   |   |   
-|   |   |   |   +---new
-|   |   |   |   |       page.js
-|   |   |   |   |       page.js.nft.json
-|   |   |   |   |       page_client-reference-manifest.js
-|   |   |   |   |       
-|   |   |   |   \---[id]
-|   |   |   |       \---edit
-|   |   |   |               page.js
-|   |   |   |               page.js.nft.json
-|   |   |   |               page_client-reference-manifest.js
-|   |   |   |               
-|   |   |   +---dashboard
-|   |   |   |       page.js
-|   |   |   |       page.js.nft.json
-|   |   |   |       page_client-reference-manifest.js
-|   |   |   |       
-|   |   |   +---favicon.ico
-|   |   |   |       route.js
-|   |   |   |       route.js.nft.json
-|   |   |   |       
-|   |   |   +---login
-|   |   |   |       page.js
-|   |   |   |       page.js.nft.json
-|   |   |   |       page_client-reference-manifest.js
-|   |   |   |       
-|   |   |   +---merchant
-|   |   |   |       page.js
-|   |   |   |       page.js.nft.json
-|   |   |   |       page_client-reference-manifest.js
-|   |   |   |       
-|   |   |   +---test
-|   |   |   |       page.js
-|   |   |   |       page.js.nft.json
-|   |   |   |       page_client-reference-manifest.js
-|   |   |   |       
-|   |   |   \---_not-found
-|   |   |           page.js
-|   |   |           page.js.nft.json
-|   |   |           page_client-reference-manifest.js
-|   |   |           
-|   |   +---chunks
-|   |   |       380.js
-|   |   |       586.js
-|   |   |       611.js
-|   |   |       
-|   |   \---pages
-|   |           _app.js
-|   |           _app.js.nft.json
-|   |           _document.js
-|   |           _document.js.nft.json
-|   |           _error.js
-|   |           _error.js.nft.json
-|   |           
+|   |       app-paths-manifest.json
+|   |       interception-route-rewrite-manifest.js
+|   |       middleware-build-manifest.js
+|   |       middleware-manifest.json
+|   |       middleware-react-loadable-manifest.js
+|   |       next-font-manifest.js
+|   |       next-font-manifest.json
+|   |       pages-manifest.json
+|   |       server-reference-manifest.js
+|   |       server-reference-manifest.json
+|   |       
 |   +---static
 |   |   +---chunks
-|   |   |   |   139.7a5a8e93a21948c1.js
-|   |   |   |   255-4efeec91c7871d79.js
-|   |   |   |   4bd1b696-c023c6e3521b1417.js
-|   |   |   |   619-ba102abea3e3d0e4.js
-|   |   |   |   646.f342b7cffc01feb0.js
-|   |   |   |   760-b48f42ec809235c4.js
-|   |   |   |   framework-acd67e14855de5a2.js
-|   |   |   |   main-app-91122984cc49b714.js
-|   |   |   |   main-ee883a14fa4836f3.js
-|   |   |   |   polyfills-42372ed130431b0a.js
-|   |   |   |   webpack-2cc0326d293ab590.js
-|   |   |   |   
-|   |   |   +---app
-|   |   |   |   |   layout-742c51c3ebdd6cdd.js
-|   |   |   |   |   page-bd917c63837d4966.js
-|   |   |   |   |   
-|   |   |   |   +---campaigns
-|   |   |   |   |   |   page-6d6207f5328b1cbf.js
-|   |   |   |   |   |   
-|   |   |   |   |   +---new
-|   |   |   |   |   |       page-0680faddb2a38941.js
-|   |   |   |   |   |       
-|   |   |   |   |   \---[id]
-|   |   |   |   |       \---edit
-|   |   |   |   |               page-9e0c93ec694494fd.js
-|   |   |   |   |               
-|   |   |   |   +---dashboard
-|   |   |   |   |       page-eab4ad73d04c8ef4.js
-|   |   |   |   |       
-|   |   |   |   +---login
-|   |   |   |   |       page-aea542fca33fe818.js
-|   |   |   |   |       
-|   |   |   |   +---merchant
-|   |   |   |   |       page-39724eb6a8325b24.js
-|   |   |   |   |       
-|   |   |   |   +---test
-|   |   |   |   |       page-6dbad725aa3ffc38.js
-|   |   |   |   |       
-|   |   |   |   \---_not-found
-|   |   |   |           page-c7bd6aad496ea668.js
-|   |   |   |           
-|   |   |   \---pages
-|   |   |           _app-82835f42865034fa.js
-|   |   |           _error-013f4188946cdd04.js
-|   |   |           
-|   |   +---css
-|   |   |       605ec05dba11040a.css
+|   |   |       polyfills.js
 |   |   |       
-|   |   +---media
-|   |   |       19cfc7226ec3afaa-s.woff2
-|   |   |       21350d82a1f187e9-s.woff2
-|   |   |       8e9860b6e62d6359-s.woff2
-|   |   |       ba9851c3c22cd980-s.woff2
-|   |   |       c5fe6dc8356a8c31-s.woff2
-|   |   |       df0a9ae256c0569c-s.woff2
-|   |   |       e4af272ccee01ff0-s.p.woff2
-|   |   |       
-|   |   \---yMAwDakLNp1Fv-rjD5ReV
+|   |   \---development
 |   |           _buildManifest.js
 |   |           _ssgManifest.js
 |   |           
 |   \---types
-|       |   cache-life.d.ts
-|       |   package.json
-|       |   routes.d.ts
-|       |   validator.ts
-|       |   
-|       \---app
-|           |   layout.ts
-|           |   page.ts
-|           |   
-|           +---campaigns
-|           |   |   page.ts
-|           |   |   
-|           |   +---new
-|           |   |       page.ts
-|           |   |       
-|           |   \---[id]
-|           |       \---edit
-|           |               page.ts
-|           |               
-|           +---dashboard
-|           |       page.ts
-|           |       
-|           +---login
-|           |       page.ts
-|           |       
-|           +---merchant
-|           |       page.ts
-|           |       
-|           \---test
-|                   page.ts
-|                   
+|           cache-life.d.ts
+|           package.json
+|           routes.d.ts
+|           validator.ts
+|           
 +---node_modules
 |   |   .package-lock.json
 |   |   
@@ -23886,6 +23739,9 @@ C:.
     |   +---dashboard
     |   |       page.tsx
     |   |       
+    |   +---deals
+    |   |       page.tsx
+    |   |       
     |   +---for-businesses
     |   |       page.tsx
     |   |       
@@ -23897,10 +23753,17 @@ C:.
     |   |       page.tsx
     |   |       
     |   +---merchant
-    |   |       BusinessProfileForm.tsx
-    |   |       DealForm.tsx
-    |   |       page.tsx
-    |   |       
+    |   |   |   DealForm.tsx
+    |   |   |   page.tsx
+    |   |   |   
+    |   |   \---deals
+    |   |       +---new
+    |   |       |       page.tsx
+    |   |       |       
+    |   |       \---[deal_id]
+    |   |           \---edit
+    |   |                   page.tsx
+    |   |                   
     |   +---support
     |   |   +---thank-you
     |   |   |       page.tsx
@@ -23912,6 +23775,7 @@ C:.
     |           page.tsx
     |           
     +---components
+    |       BusinessProfileForm.tsx
     |       Header.tsx
     |       SignOutButton.tsx
     |       
