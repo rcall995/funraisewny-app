@@ -65,17 +65,18 @@ export default function CampaignsPage() {
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
 
+    // FINAL FIX: Explicitly define the foreign key relationship to resolve ambiguity
     const { data, error } = await supabase
       .from('campaigns')
       .select(`
         *,
-        memberships (
+        memberships!campaign_id (
           fundraiser_share,
           profiles ( full_name, email )
         )
       `)
-      .eq('organizer_id', userId);
-      // .eq('status', view); // <-- TEMPORARILY COMMENTED OUT FOR TESTING
+      .eq('organizer_id', userId)
+      .eq('status', view);
 
     if (error) {
       console.error('Error fetching campaigns:', error);
