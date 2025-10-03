@@ -31,17 +31,18 @@ const DealCard = ({ deal, index, onQuickView }: { deal: Deal; index: number; onQ
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3, delay: index * 0.1 }}
       whileHover={{ scale: 1.02, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
-      className="bg-white rounded-lg shadow-md p-4 mb-4 cursor-pointer border hover:border-blue-200 role='button'"
+      className="bg-white rounded-lg shadow-md p-4 mb-4 cursor-pointer border hover:border-blue-200"
+      role="button"
       onClick={() => onQuickView(deal)}
     >
       <div className="flex items-center mb-2">
         {business.logo_url ? (
-          <Image 
-            src={business.logo_url} 
-            alt={`${business.business_name} logo`} 
-            width={40} 
-            height={40} 
-            className="rounded-full mr-2 object-cover" 
+          <Image
+            src={business.logo_url}
+            alt={`${business.business_name} logo`}
+            width={40}
+            height={40}
+            className="rounded-full mr-2 object-cover"
           />
         ) : (
           <div className="w-10 h-10 bg-gray-200 rounded-full mr-2 flex items-center justify-center">
@@ -58,7 +59,9 @@ const DealCard = ({ deal, index, onQuickView }: { deal: Deal; index: number; onQ
         </div>
       </div>
       <h2 className="text-xl font-bold mb-2 text-blue-600">{deal.title}</h2>
-      <p className="text-gray-700 mb-2 text-sm leading-relaxed">{deal.description}</p>
+      <p className="text-gray-700 mb-2 text-sm leading-relaxed overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+        {deal.description}
+      </p>
       {deal.terms && (
         <div className="text-sm text-gray-500 italic pt-2 border-t border-gray-100">
           Terms: {deal.terms}
@@ -160,29 +163,29 @@ const HeroCarousel = ({ featuredDeals }: { featuredDeals: Deal[] }) => {
 };
 
 // --- Filters ---
-const Filters = ({ 
-  onCategoryChange, 
-  onGeoFilter, 
-  categories 
-}: { 
-  onCategoryChange: (cat: string) => void; 
-  onGeoFilter: () => void; 
-  categories: string[]; 
+const Filters = ({
+  onCategoryChange,
+  onGeoFilter,
+  categories
+}: {
+  onCategoryChange: (cat: string) => void;
+  onGeoFilter: () => void;
+  categories: string[];
 }) => (
   <div className="flex flex-wrap gap-3 mb-8 justify-center items-center">
     <button className="flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors">
       <Search className="w-4 h-4 mr-2" /> Search Deals
     </button>
-    <button 
-      onClick={onGeoFilter} 
+    <button
+      onClick={onGeoFilter}
       className="flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors"
     >
       <MapPin className="w-4 h-4 mr-2" /> Near Me
     </button>
     {categories.map((cat) => (
-      <button 
-        key={cat} 
-        onClick={() => onCategoryChange(cat)} 
+      <button
+        key={cat}
+        onClick={() => onCategoryChange(cat)}
         className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors"
       >
         {cat}
@@ -192,14 +195,14 @@ const Filters = ({
 );
 
 // --- Main Client Component ---
-export default function DealsPage({ 
-  initialDeals, 
-  initialIsMember, 
-  initialFeatured 
-}: { 
-  initialDeals: Deal[]; 
-  initialIsMember: boolean; 
-  initialFeatured: Deal[]; 
+export default function DealsPage({
+  initialDeals,
+  initialIsMember,
+  initialFeatured
+}: {
+  initialDeals: Deal[];
+  initialIsMember: boolean;
+  initialFeatured: Deal[];
 }) {
   const [deals, setDeals] = useState(initialDeals);
   const [isMember] = useState(initialIsMember);
@@ -218,11 +221,13 @@ export default function DealsPage({
       async (position) => {
         try {
           // Assuming RPC setup; fallback to random shuffle for demo
-          const { data } = await supabase.rpc('nearby_deals', {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            radius: 10000,
-          }).catch(() => ({ data: initialDeals })); // Graceful fallback
+          const { data } = await supabase
+            .rpc('nearby_deals', {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+              radius: 10000,
+            })
+            .catch(() => ({ data: initialDeals })); // Graceful fallback
           setDeals(data || initialDeals);
           setProgress((prev) => Math.min(100, prev + 20));
         } catch (error) {
@@ -255,16 +260,16 @@ export default function DealsPage({
     return (
       <main className="bg-gray-50 min-h-screen py-12 px-4 flex items-center justify-center">
         <div className="container mx-auto max-w-2xl text-center">
-          <motion.h1 
-            initial={{ opacity: 0, y: -20 }} 
-            animate={{ opacity: 1, y: 0 }} 
+          <motion.h1
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
             className="text-3xl font-bold mb-4 text-gray-900"
           >
             Members-Only Deals Await!
           </motion.h1>
           <p className="text-gray-600 mb-8">Unlock exclusive WNY savings by supporting a fundraiser.</p>
-          <Link 
-            href="/login" 
+          <Link
+            href="/login"
             className="px-8 py-3 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-colors"
           >
             Login or Sign Up
@@ -279,9 +284,9 @@ export default function DealsPage({
   return (
     <main className="bg-gray-50 min-h-screen py-12 px-4">
       <div className="container mx-auto max-w-6xl">
-        <motion.div 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           className="text-center mb-8"
         >
           <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
