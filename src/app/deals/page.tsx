@@ -28,38 +28,37 @@ const DealCard = ({ deal, index, onQuickView }: { deal: Deal; index: number; onQ
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3, delay: index * 0.1 }}
       whileHover={{ scale: 1.02, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
-      className="bg-white rounded-lg shadow-md p-4 mb-4 cursor-pointer border hover:border-blue-200"
+      className="bg-white rounded-lg shadow-md p-6 cursor-pointer border hover:border-blue-200"
       role="button"
       onClick={() => onQuickView(deal)}
     >
-      <div className="flex items-center mb-2">
+      <div className="flex items-center mb-4">
         {business.logo_url ? (
           <Image
             src={business.logo_url}
             alt={`${business.business_name} logo`}
             width={40}
             height={40}
-            className="rounded-full mr-2 object-cover"
+            className="rounded-full mr-4 object-cover"
           />
         ) : (
-          <div className="w-10 h-10 bg-gray-200 rounded-full mr-2 flex items-center justify-center">
+          <div className="w-10 h-10 bg-gray-200 rounded-full mr-4 flex items-center justify-center">
             <span className="text-gray-500 text-xs">Logo</span>
           </div>
         )}
         <div>
           <h3 className="font-semibold text-gray-900">{business.business_name}</h3>
-          {index === 0 && <span className="text-sm text-green-500">New Deal!</span>}
-          <div className="text-sm text-gray-500 flex items-center">
+          {index === 0 && <span className="text-sm text-green-500 ml-2">New Deal!</span>}
+          <div className="text-sm text-gray-500 flex items-center mt-1">
             <MapPin size={14} className="mr-1" />
             {business.address}
           </div>
         </div>
       </div>
       <h2 className="text-xl font-bold mb-2 text-blue-600">{deal.title}</h2>
-      <p className="text-gray-700 mb-2 text-sm leading-relaxed overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+      <p className="text-gray-700 mb-4 text-sm leading-relaxed overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
         {deal.description}
       </p>
       {deal.terms && (
@@ -120,7 +119,7 @@ const HeroCarousel = ({ featuredDeals }: { featuredDeals: Deal[] }) => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % featuredDeals.length);
-    }, 3000); // 3-second rotation
+    }, 3000);
     return () => clearInterval(interval);
   }, [featuredDeals.length]);
 
@@ -148,7 +147,6 @@ const HeroCarousel = ({ featuredDeals }: { featuredDeals: Deal[] }) => {
           </Link>
         </motion.div>
       </AnimatePresence>
-      {/* Dots Indicator */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
         {featuredDeals.map((_, idx) => (
           <button
@@ -211,32 +209,27 @@ export default function DealsPage({
   const [progress, setProgress] = useState(0);
   const supabase = createClientComponentClient();
 
-  // Geo Filter (Fallback to all if no PostGIS)
   const handleGeoFilter = async () => {
     if (!navigator.geolocation) {
-      alert('Geolocation not supported in your browser.');
+      alert('Geolocation not supported.');
       return;
     }
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
-          // Assuming RPC setup; fallback to random shuffle for demo
-          const { data } = await supabase
-            .rpc('nearby_deals', {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-              radius: 10000,
-            })
-            .catch(() => ({ data: initialDeals })); // Graceful fallback
+          const { data } = await supabase.rpc('nearby_deals', {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            radius: 10000,
+          }).catch(() => ({ data: initialDeals }));
           setDeals(data || initialDeals);
           setProgress((prev) => Math.min(100, prev + 20));
         } catch (error) {
           console.error('Geo filter error:', error);
-          // Shuffle for "nearby" feel
           setDeals(initialDeals.sort(() => Math.random() - 0.5));
         }
       },
-      () => alert('Please allow location access for nearby deals.')
+      () => alert('Location access denied.')
     );
   };
 
@@ -252,7 +245,7 @@ export default function DealsPage({
 
   useEffect(() => {
     if (deals.length > 0) {
-      setProgress((prev) => Math.min(100, prev + 5)); // Incremental on load
+      setProgress((prev) => Math.min(100, prev + 5));
     }
   }, [deals.length]);
 
@@ -293,7 +286,6 @@ export default function DealsPage({
             Your WNY Deal Wonderland
           </h1>
           <p className="text-lg text-gray-600 mb-4">Discover savings that fuel fun fundraisers.</p>
-          {/* Progress Bar */}
           <div className="w-full bg-gray-200 rounded-full h-2 mb-2 overflow-hidden">
             <motion.div
               className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full"
@@ -343,7 +335,7 @@ export default function DealsPage({
   );
 }
 
-// --- Server-Side Data Fetch (RSC Wrapper) ---
+// --- Server-Side Data Fetch ---
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
@@ -381,7 +373,7 @@ export async function getServerDeals() {
   }
 
   const deals = dealData as Deal[] || [];
-  return { deals, isMember: true, featured: deals.slice(0, 5) }; // Top 5 for featured
+  return { deals, isMember: true, featured: deals.slice(0, 5) };
 }
 
 export default async function DealsPageWrapper() {
