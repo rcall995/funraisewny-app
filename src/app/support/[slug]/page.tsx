@@ -17,7 +17,6 @@ type Campaign = {
   slug: string; 
 };
 
-// This is our simplified type for what we display
 type SupporterDisplayInfo = {
   name: string;
 };
@@ -28,7 +27,6 @@ export default function SupportPage() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   
-  // State for Name Input
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [nameError, setNameError] = useState('');
@@ -39,7 +37,6 @@ export default function SupportPage() {
   const { user } = useUser();
   const slug = params.slug as string;
 
-  // Function to format name as "First Name L."
   const formatSupporterName = useCallback((fullName: string | null) => {
     if (!fullName) return 'An anonymous supporter';
     const parts = fullName.trim().split(/\s+/);
@@ -60,13 +57,12 @@ export default function SupportPage() {
       const { data: campaignData, error: campaignError } = await supabase.from('campaigns').select('*, id, campaign_name, description, logo_url').eq('slug', slug).single();
       
       if (campaignError) {
-         console.error("Campaign fetch error:", campaignError);
+          console.error("Campaign fetch error:", campaignError);
       }
 
       if(campaignData) {
         setCampaign({...campaignData, slug} as Campaign); 
 
-        // Fetch recent supporters
         const { data: membershipsData } = await supabase
           .from('memberships')
           .select(`profiles ( full_name )`)
@@ -75,7 +71,6 @@ export default function SupportPage() {
           .limit(5);
         
         if (membershipsData) {
-          // FIX: Use unknown as intermediate cast to resolve TypeScript error from prior iteration.
           const displaySupporters = (membershipsData as unknown as { profiles: { full_name: string | null; } | null }[]).map(s => ({
             name: formatSupporterName(s.profiles?.full_name || null)
           }));
@@ -83,7 +78,6 @@ export default function SupportPage() {
           setSupporters(displaySupporters);
         }
 
-        // Pre-fill name fields if the user is already logged in and has a profile name
         if (user) {
             const { data: profileData } = await supabase
               .from('profiles')
@@ -110,7 +104,6 @@ export default function SupportPage() {
       return;
     }
 
-    // 1. Validation Check: Require names before proceeding
     if (!firstName || !lastName) {
       setNameError('Please enter your first and last name.');
       return;
@@ -120,7 +113,6 @@ export default function SupportPage() {
     
     const newFullName = `${firstName.trim()} ${lastName.trim()}`;
 
-    // 2. Update User Profile with Full Name (so the name shows up in the supporter list)
     const { error: profileError } = await supabase.from('profiles').update({
         full_name: newFullName,
     }).eq('id', user.id);
@@ -131,7 +123,6 @@ export default function SupportPage() {
       return;
     }
 
-    // 3. Create Membership (Simulated Purchase)
     const salePrice = 25.00;
     const fundraiserShare = salePrice * 0.70;
     const expires_at = new Date();
@@ -149,8 +140,9 @@ export default function SupportPage() {
       alert('Error: Could not complete your membership. Please try again.');
       setProcessing(false);
     } else {
-      // FIX: Redirect supporter directly to the deals page (the root path)
-      router.push('/'); 
+      // --- THIS IS THE FIX ---
+      // Redirect supporter directly to the deals page instead of the homepage.
+      router.push('/deals'); 
     }
   };
 
@@ -173,11 +165,10 @@ export default function SupportPage() {
           <h2 className="text-2xl font-semibold">Get Your FunraiseWNY Membership</h2>
           <div className="my-6"><span className="text-5xl font-bold">$25</span><span className="text-gray-500">/ year</span></div>
 
-          {/* Supporter Information is shown when a user is logged in */}
           {user && (
              <div className="mb-6 space-y-4">
-               <h3 className="text-left text-lg font-medium text-gray-700">Supporter Information</h3>
-               <div className="flex space-x-4">
+              <h3 className="text-left text-lg font-medium text-gray-700">Supporter Information</h3>
+              <div className="flex space-x-4">
                  <input
                    type="text"
                    placeholder="First Name"
@@ -194,8 +185,8 @@ export default function SupportPage() {
                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                    required
                  />
-               </div>
-               {nameError && <p className="text-red-500 text-sm text-left">{nameError}</p>}
+              </div>
+              {nameError && <p className="text-red-500 text-sm text-left">{nameError}</p>}
              </div>
           )}
 
