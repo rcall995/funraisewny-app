@@ -10,7 +10,6 @@ import Image from 'next/image';
 // --- Type Definitions ---
 type Campaign = { id: number; campaign_name: string; description: string; logo_url: string | null; slug: string; };
 type SupporterDisplayInfo = { name: string; };
-type MembershipWithProfile = { profiles: { full_name: string | null; } | null; };
 
 export default function SupportPage() {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
@@ -20,8 +19,8 @@ export default function SupportPage() {
   
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(''); // For new user sign-up
+  const [password, setPassword] = useState(''); // For new user sign-up
   const [error, setError] = useState('');
   
   const supabase = createClientComponentClient();
@@ -38,45 +37,43 @@ export default function SupportPage() {
     return (first && lastInitial) ? `${first} ${lastInitial}.` : first;
   }, []);
 
-  // FIX: Wrapped data fetching logic in a useCallback hook to prevent infinite loops
-  const fetchCampaignData = useCallback(async () => {
-    if (!slug) { setLoading(false); return; }
-    
-    setLoading(true);
-    const { data: campaignData } = await supabase.from('campaigns').select('id, campaign_name, description, logo_url, slug').eq('slug', slug).single();
-    
-    if (campaignData) {
-      setCampaign(campaignData as Campaign); 
-  
-      const { data: membershipsData } = await supabase.from('memberships').select('profiles(full_name)').eq('campaign_id', campaignData.id).order('created_at', { ascending: false }).limit(5);
-      
-      if (membershipsData) {
-        // This type needs to be less strict as the join can be ambiguous
-        const displaySupporters = (membershipsData as any[]).map(s => ({ 
-          name: formatSupporterName(s.profiles?.full_name || (Array.isArray(s.profiles) ? s.profiles[0]?.full_name : null) || null) 
-        }));
-        setSupporters(displaySupporters);
-      }
-  
-      if (user && user.user_metadata.full_name) {
-          const parts = user.user_metadata.full_name.trim().split(/\s+/);
-          setFirstName(parts[0] || '');
-          setLastName(parts.length > 1 ? parts[parts.length - 1] : '');
-      }
-    }
-    setLoading(false);
-  }, [slug, user, supabase, formatSupporterName]);
-
   useEffect(() => {
+    const fetchCampaignData = async () => {
+      if (!slug) { setLoading(false); return; }
+      
+      const { data: campaignData } = await supabase.from('campaigns').select('id, campaign_name, description, logo_url, slug').eq('slug', slug).single();
+      
+      if(campaignData) {
+        setCampaign(campaignData as Campaign); 
+
+        const { data: membershipsData } = await supabase.from('memberships').select('profiles(full_name)').eq('campaign_id', campaignData.id).order('created_at', { ascending: false }).limit(5);
+        
+        if (membershipsData) {
+          // FIX: Use a specific type cast to resolve the 'any' type error.
+          const displaySupporters = (membershipsData as { profiles: { full_name: string | null }[] | null }[]).map(s => ({ 
+            name: formatSupporterName(s.profiles?.[0]?.full_name || null) 
+          }));
+          setSupporters(displaySupporters);
+        }
+
+        if (user?.user_metadata.full_name) {
+            const parts = user.user_metadata.full_name.trim().split(/\s+/);
+            setFirstName(parts[0] || '');
+            setLastName(parts.length > 1 ? parts[parts.length - 1] : '');
+        }
+      }
+      setLoading(false);
+    };
     fetchCampaignData();
-  }, [fetchCampaignData]); 
+  }, [supabase, slug, user, formatSupporterName]); 
   
   const handlePurchase = async () => {
     setError('');
     setProcessing(true);
 
     let userId: string;
-    let newFullName = `${firstName.trim()} ${lastName.trim()}`;
+    // FIX: Changed 'let' to 'const' to resolve the linter error.
+    const newFullName = `${firstName.trim()} ${lastName.trim()}`;
 
     if (!user) {
       if (!email || !password || !firstName || !lastName) {
@@ -92,10 +89,9 @@ export default function SupportPage() {
       });
 
       if (signUpError) { setError(signUpError.message); setProcessing(false); return; }
-      if (!signUpData.user) { setError('Could not create user. Please try again.'); setProcessing(false); return; }
+      if (!signUpData.user) { setError('Could not create user.'); setProcessing(false); return; }
       
       userId = signUpData.user.id;
-      
       await supabase.from('profiles').insert({ id: userId, full_name: newFullName });
     } else {
       if (!firstName || !lastName) { setError('Please enter your first and last name.'); setProcessing(false); return; }
@@ -131,7 +127,15 @@ export default function SupportPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 md:p-8"> 
       <div className="w-full max-w-2xl text-center">
-        {campaign.logo_url && ( <Image src={campaign.logo_url} alt={`${campaign.campaign_name} logo`} width={128} height={128} className="w-32 h-32 object-contain rounded-full mx-auto mb-4 bg-white shadow-lg border" /> )}
+        {campaign.logo_url && (
+          <Image 
+            src={campaign.logo_url} 
+            alt={`${campaign.campaign_name} logo`} 
+            width={128}
+            height={128}
+            className="w-32 h-32 object-contain rounded-full mx-auto mb-4 bg-white shadow-lg border" 
+          />
+        )}
         <p className="text-lg text-gray-600">You are supporting:</p>
         <h1 className="text-4xl font-bold text-slate-900 my-2">{campaign.campaign_name}</h1>
         <p className="text-gray-700 my-6 max-w-xl mx-auto">{campaign.description}</p>
@@ -169,7 +173,6 @@ export default function SupportPage() {
           </button>
         </div>
         
-        {/* FIX: Restored the 'Recent Supporters' display list */}
         {supporters.length > 0 && (
           <div className="mt-8">
             <h3 className="text-lg font-semibold text-gray-800">Recent Supporters</h3>
