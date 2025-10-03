@@ -140,8 +140,7 @@ export default function SupportPage() {
       alert('Error: Could not complete your membership. Please try again.');
       setProcessing(false);
     } else {
-      // --- THIS IS THE FIX ---
-      // Redirect supporter directly to the deals page instead of the homepage.
+      router.refresh(); // This tells Next.js to get the latest server data
       router.push('/deals'); 
     }
   };
