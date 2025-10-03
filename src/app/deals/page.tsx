@@ -1,10 +1,9 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
-import DealsClientPage from './DealsClientPage'; // We will create this in Step 2
+import DealsClientPage from './DealsClientPage';
 
 // --- Type Definition ---
-// This type is now shared between the server and client components
 export type Deal = {
   title: string;
   description: string;
@@ -22,26 +21,21 @@ async function getServerDeals() {
   const supabase = createServerComponentClient({ cookies });
   const { data: { session } } = await supabase.auth.getSession();
 
-  // If no user is logged in, return the non-member state
   if (!session) {
     return { deals: [], isMember: false, featured: [] };
   }
 
-  // Check if the logged-in user has an active membership
   const { data: membership } = await supabase
     .from('memberships')
     .select('id')
     .eq('user_id', session.user.id)
     .gte('expires_at', new Date().toISOString())
-    .limit(1)
-    .single();
+    .limit(1);
 
-  // If they are not a member, return the non-member state
-  if (!membership) {
+  if (!membership || membership.length === 0) {
     return { deals: [], isMember: false, featured: [] };
   }
 
-  // If they are a member, fetch all the approved and active deals
   const { data: dealData, error } = await supabase
     .from('deals')
     .select(`
@@ -50,7 +44,8 @@ async function getServerDeals() {
         business_name, logo_url, address
       )
     `)
-    .eq('is_active', true)
+    // FINAL FIX: Changed 'is_active' to 'status' and 'true' to 'active'
+    .eq('status', 'active')
     .eq('approval_status', 'approved')
     .order('created_at', { ascending: false });
 
@@ -60,8 +55,6 @@ async function getServerDeals() {
   }
 
   const deals = (dealData as Deal[]) || [];
-  
-  // For the carousel, let's feature the 5 newest deals
   const featured = deals.slice(0, 5);
 
   return { deals, isMember: true, featured };
@@ -72,8 +65,6 @@ async function getServerDeals() {
 export default async function DealsPage() {
   const { deals, isMember, featured } = await getServerDeals();
 
-  // If the user isn't a member, we can show a simple message here
-  // or pass the flag to the client to show an animated one.
   if (!isMember) {
     return (
         <main className="bg-gray-50 min-h-screen py-12 px-4 flex items-center justify-center">
@@ -90,8 +81,6 @@ export default async function DealsPage() {
     );
   }
 
-  // If they are a member, we render the interactive client page
-  // and pass the data we fetched on the server as initial props.
   return (
     <DealsClientPage 
       initialDeals={deals} 
