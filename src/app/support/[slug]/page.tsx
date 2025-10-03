@@ -8,7 +8,6 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 /* eslint-disable @next/next/no-img-element */
 
-// --- Type Definitions ---
 type Campaign = {
   id: number;
   campaign_name: string;
@@ -44,9 +43,7 @@ export default function SupportPage() {
     const lastName = parts.length > 1 ? parts[parts.length - 1] : '';
     const lastInitial = lastName.charAt(0);
     
-    if (first && lastInitial) {
-        return `${first} ${lastInitial}.`;
-    }
+    if (first && lastInitial) { return `${first} ${lastInitial}.`; }
     return first || 'An anonymous supporter';
   }, []);
 
@@ -54,42 +51,32 @@ export default function SupportPage() {
     const fetchCampaignData = async () => {
       if (!slug) return;
       
-      const { data: campaignData, error: campaignError } = await supabase.from('campaigns').select('*, id, campaign_name, description, logo_url').eq('slug', slug).single();
+      const { data: campaignData } = await supabase.from('campaigns').select('id, campaign_name, description, logo_url, slug').eq('slug', slug).single();
       
-      if (campaignError) {
-          console.error("Campaign fetch error:", campaignError);
-      }
-
       if(campaignData) {
-        setCampaign({...campaignData, slug} as Campaign); 
+        setCampaign(campaignData as Campaign); 
 
-        const { data: membershipsData } = await supabase
-          .from('memberships')
-          .select(`profiles ( full_name )`)
-          .eq('campaign_id', campaignData.id)
-          .order('created_at', { ascending: false })
-          .limit(5);
+        const { data: membershipsData } = await supabase.from('memberships').select(`profiles ( full_name )`).eq('campaign_id', campaignData.id).order('created_at', { ascending: false }).limit(5);
         
         if (membershipsData) {
-          const displaySupporters = (membershipsData as unknown as { profiles: { full_name: string | null; } | null }[]).map(s => ({
-            name: formatSupporterName(s.profiles?.full_name || null)
-          }));
-          
+          const displaySupporters = (membershipsData as any[]).map(s => ({ name: formatSupporterName(s.profiles?.full_name || null) }));
           setSupporters(displaySupporters);
         }
 
         if (user) {
-            const { data: profileData } = await supabase
+            // FIX: Changed .single() to .limit(1) to make the code more robust
+            const { data: profilesData } = await supabase
               .from('profiles')
               .select('full_name')
               .eq('id', user.id)
-              .single();
+              .limit(1);
+            
+            const profileData = profilesData && profilesData.length > 0 ? profilesData[0] : null;
             
             if (profileData?.full_name) {
                 const parts = profileData.full_name.trim().split(/\s+/);
                 setFirstName(parts[0] || '');
-                const last = parts.length > 1 ? parts[parts.length - 1] : '';
-                setLastName(last);
+                setLastName(parts.length > 1 ? parts[parts.length - 1] : '');
             }
         }
       }
@@ -113,7 +100,10 @@ export default function SupportPage() {
     
     const newFullName = `${firstName.trim()} ${lastName.trim()}`;
 
-    const { error: profileError } = await supabase.from('profiles').update({
+    // This query uses 'upsert' which is safer. It will update the existing profile
+    // or insert a new one if it doesn't exist, preventing duplicates.
+    const { error: profileError } = await supabase.from('profiles').upsert({
+        id: user.id,
         full_name: newFullName,
     }).eq('id', user.id);
 
@@ -140,17 +130,13 @@ export default function SupportPage() {
       alert('Error: Could not complete your membership. Please try again.');
       setProcessing(false);
     } else {
-      router.refresh(); // This tells Next.js to get the latest server data
+      router.refresh(); 
       router.push('/deals'); 
     }
   };
 
-  if (loading) {
-    return <div className="p-8 text-center">Loading campaign...</div>;
-  }
-  if (!campaign) {
-    return <div className="p-8 text-center">Campaign not found.</div>;
-  }
+  if (loading) { return <div className="p-8 text-center">Loading campaign...</div>; }
+  if (!campaign) { return <div className="p-8 text-center">Campaign not found.</div>; }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 md:p-8"> 
@@ -168,22 +154,8 @@ export default function SupportPage() {
              <div className="mb-6 space-y-4">
               <h3 className="text-left text-lg font-medium text-gray-700">Supporter Information</h3>
               <div className="flex space-x-4">
-                 <input
-                   type="text"
-                   placeholder="First Name"
-                   value={firstName}
-                   onChange={(e) => setFirstName(e.target.value)}
-                   className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                   required
-                 />
-                 <input
-                   type="text"
-                   placeholder="Last Name"
-                   value={lastName}
-                   onChange={(e) => setLastName(e.target.value)}
-                   className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                   required
-                 />
+                 <input type="text" placeholder="First Name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required />
+                 <input type="text" placeholder="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required />
               </div>
               {nameError && <p className="text-red-500 text-sm text-left">{nameError}</p>}
              </div>
