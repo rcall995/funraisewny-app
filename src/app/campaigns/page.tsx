@@ -8,7 +8,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 // --- Type Definitions ---
 type Membership = {
   fundraiser_share: number;
-  profiles: { full_name: string; email: string; } | null;
+  profiles: { full_name: string; } | null; // Removed email from type
 };
 type Campaign = {
   id: number;
@@ -21,14 +21,35 @@ type Campaign = {
   memberships: Membership[];
 };
 
-// --- Feather Icons ---
-const CopyIcon = ({ className = 'w-5 h-5' }) => ( <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v2M9 17v-5"></path></svg> );
-const FacebookIcon = ({ className = 'w-5 h-5' }) => ( <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.77-1.63 1.563V12h3.292l-.53 3.393h-2.762v6.987C18.343 21.128 22 16.991 22 12z" /></svg> );
-const TwitterIcon = ({ className = 'w-5 h-5' }) => ( <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.883L4.99 21.75H1.68l7.228-8.26L1.5 2.25h3.308l5.98 7.859L17.65 2.25h.594zm-2.774 15.65H15.1l-6.573-7.737L5.438 4.25H6.96l6.32 7.464L18.244 2.25h-1.554z" /></svg> );
+// --- Feather Icons (Simple SVG for common use) ---
+const CopyIcon = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v2M9 17v-5"></path></svg>
+);
+const FacebookIcon = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.77-1.63 1.563V12h3.292l-.53 3.393h-2.762v6.987C18.343 21.128 22 16.991 22 12z" /></svg>
+);
+const TwitterIcon = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.883L4.99 21.75H1.68l7.228-8.26L1.5 2.25h3.308l5.98 7.859L17.65 2.25h.594zm-2.774 15.65H15.1l-6.573-7.737L5.438 4.25H6.96l6.32 7.464L18.244 2.25h-1.554z" /></svg>
+);
 
 // --- Reusable Share Button Component ---
-type ShareButtonProps = { onClick: () => void; icon: React.ReactNode; label: string; bgColor: string; isCopied?: boolean; };
-const ShareButton: React.FC<ShareButtonProps> = ({ onClick, icon, label, bgColor, isCopied = false }) => ( <button onClick={onClick} className={`flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white ${bgColor} rounded-md transition duration-150 ease-in-out hover:opacity-90`} aria-label={`Share on ${label}`}> {icon} <span>{isCopied ? 'Copied!' : label}</span> </button> );
+type ShareButtonProps = {
+    onClick: () => void;
+    icon: React.ReactNode;
+    label: string;
+    bgColor: string;
+    isCopied?: boolean;
+};
+const ShareButton: React.FC<ShareButtonProps> = ({ onClick, icon, label, bgColor, isCopied = false }) => (
+    <button
+        onClick={onClick}
+        className={`flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white ${bgColor} rounded-md transition duration-150 ease-in-out hover:opacity-90`}
+        aria-label={`Share on ${label}`}
+    >
+        {icon}
+        <span>{isCopied ? 'Copied!' : label}</span>
+    </button>
+);
 
 
 // --- Main Component ---
@@ -44,21 +65,20 @@ export default function CampaignsPage() {
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
 
-    // FIX: Explicitly define the foreign key relationship to resolve ambiguity
     const { data, error } = await supabase
       .from('campaigns')
       .select(`
         *,
-        memberships!campaign_id (
+        memberships!memberships_campaign_id_fkey (
           fundraiser_share,
-          profiles ( full_name, email )
+          profiles ( full_name ) 
         )
       `)
       .eq('organizer_id', userId)
       .eq('status', view);
 
     if (error) {
-      console.error('Error fetching campaigns:', error);
+      console.error('Full campaign fetch error:', JSON.stringify(error, null, 2));
       setCampaigns([]);
     } else {
       setCampaigns(data as Campaign[]);
@@ -77,7 +97,11 @@ export default function CampaignsPage() {
 
   const handleEndCampaign = async (campaignId: number) => {
     if (window.confirm('Are you sure you want to end this campaign? It will be moved to your "Past Campaigns" list.')) {
-      const { error } = await supabase.from('campaigns').update({ status: 'ended' }).eq('id', campaignId);
+      const { error } = await supabase
+        .from('campaigns')
+        .update({ status: 'ended' })
+        .eq('id', campaignId);
+
       if (error) {
         alert('Error ending campaign: ' + error.message);
       } else {
@@ -99,12 +123,27 @@ export default function CampaignsPage() {
     });
   };
 
-  const shareOnFacebook = (campaign: Campaign) => { /* ... */ };
-  const shareOnTwitter = (campaign: Campaign) => { /* ... */ };
+  const shareOnFacebook = (campaign: Campaign) => {
+    const shareUrl = getShareLink(campaign.slug);
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    window.open(fbUrl, '_blank', 'width=600,height=400');
+  };
+
+  const shareOnTwitter = (campaign: Campaign) => {
+    const shareUrl = getShareLink(campaign.slug);
+    const text = `Support our fundraiser for ${campaign.campaign_name}! #funraisewny`;
+    const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
+    window.open(twitterUrl, '_blank', 'width=600,height=400');
+  };
   
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC', });
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    });
   };
 
   if (loading || userLoading) {
@@ -112,14 +151,23 @@ export default function CampaignsPage() {
   }
 
   if (!user) {
-    return ( <div className="p-8 text-center"> <h1 className="text-2xl font-bold mb-4">Please log in to manage your campaigns.</h1> <Link href="/login" className="text-blue-600 hover:underline">Go to Login</Link> </div> );
+    return (
+      <div className="p-8 text-center">
+        <h1 className="text-2xl font-bold mb-4">Please log in to manage your campaigns.</h1>
+        <Link href="/login" className="text-blue-600 hover:underline">Go to Login</Link>
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Your Fundraising Campaigns</h1>
-        {view === 'active' && ( <Link href="/campaigns/new" className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700"> + New Campaign </Link> )}
+        {view === 'active' && (
+          <Link href="/campaigns/new" className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">
+            + New Campaign
+          </Link>
+        )}
       </div>
       
       <div className="mb-6 border-b border-gray-200">
@@ -157,10 +205,29 @@ export default function CampaignsPage() {
                 <div className="mt-4 p-4 rounded-lg border border-gray-200 shadow-sm">
                   <h3 className="text-lg font-semibold mb-3 text-gray-700">Share Your Campaign</h3>
                   <div className="mt-2 flex flex-wrap gap-3">
-                    <ShareButton onClick={() => handleCopyLink(campaign)} icon={<CopyIcon />} label="Copy Link" bgColor="bg-gray-600 hover:bg-gray-700" isCopied={copiedId === campaign.id} />
-                    <ShareButton onClick={() => shareOnFacebook(campaign)} icon={<FacebookIcon />} label="Facebook" bgColor="bg-blue-800 hover:bg-blue-900" />
-                    <ShareButton onClick={() => shareOnTwitter(campaign)} icon={<TwitterIcon />} label="X (Twitter)" bgColor="bg-sky-500 hover:bg-sky-600" />
-                    <a href={`mailto:?subject=Support my fundraiser: ${campaign.campaign_name}&body=Please help me reach my goal for this great cause! Donate here: ${shareableLink}`} className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-red-500 rounded-md transition duration-150 ease-in-out hover:opacity-90">
+                    <ShareButton
+                        onClick={() => handleCopyLink(campaign)}
+                        icon={<CopyIcon />}
+                        label="Copy Link"
+                        bgColor="bg-gray-600 hover:bg-gray-700"
+                        isCopied={copiedId === campaign.id}
+                    />
+                    <ShareButton
+                        onClick={() => shareOnFacebook(campaign)}
+                        icon={<FacebookIcon />}
+                        label="Facebook"
+                        bgColor="bg-blue-800 hover:bg-blue-900"
+                    />
+                    <ShareButton
+                        onClick={() => shareOnTwitter(campaign)}
+                        icon={<TwitterIcon />}
+                        label="X (Twitter)"
+                        bgColor="bg-sky-500 hover:bg-sky-600"
+                    />
+                    <a 
+                        href={`mailto:?subject=Support my fundraiser: ${campaign.campaign_name}&body=Please help me reach my goal for this great cause! Donate here: ${shareableLink}`}
+                        className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-red-500 rounded-md transition duration-150 ease-in-out hover:opacity-90"
+                    >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 4v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7"></path></svg>
                         <span>Email</span>
                     </a>

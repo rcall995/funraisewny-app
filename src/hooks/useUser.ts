@@ -4,14 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { User } from '@supabase/supabase-js';
 
-type UserProfile = {
-  user: User | null;
-  isMerchant: boolean;
-  isFundraiser: boolean;
-  isMember: boolean;
-  loading: boolean;
-};
-
+type UserProfile = { user: User | null; isMerchant: boolean; isFundraiser: boolean; isMember: boolean; loading: boolean; };
 type SupabaseResponse = { data: unknown; error: unknown };
 
 const safeQuery = async (queryPromise: Promise<SupabaseResponse>): Promise<{ data: boolean; error: boolean }> => {
@@ -42,7 +35,6 @@ export default function useUser(): UserProfile {
     setUser(user);
 
     if (user) {
-      // FIX: Use .limit(1) on all checks to prevent 406 errors
       const [merchantRes, fundraiserRes, memberRes] = await Promise.all([
         supabase.from('businesses').select('id').eq('owner_id', user.id).limit(1), 
         supabase.from('campaigns').select('id').eq('organizer_id', user.id).limit(1),
