@@ -104,7 +104,6 @@ export default function MerchantDashboard() {
         {!businessProfile ? (
           <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
             <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome!</h1>
-            {/* FIX: Changed "Let's" to "Let&apos;s" */}
             <p className="text-gray-600 mb-6">Let&apos;s set up your business profile to get started.</p>
             <BusinessProfileForm user={user} onSave={fetchMerchantData} initialData={null} />
           </div>
@@ -114,12 +113,19 @@ export default function MerchantDashboard() {
               Welcome back, {businessProfile.business_name}!
             </h1>
             
+            {/* --- LAYOUT CHANGE: Business Profile Section is now first --- */}
+            <div className="bg-white p-6 rounded-lg shadow-md border">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Your Business Profile</h2>
+              <BusinessProfileForm user={user} onSave={fetchMerchantData} initialData={businessProfile} />
+            </div>
+
+            {/* --- LAYOUT CHANGE: Deals Management Section is now second --- */}
             <div className="bg-white p-6 rounded-lg shadow-md border">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">Your Deals</h2>
-                <Link href="/merchant/deals/new" className="inline-block bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition">
-  + Create New Deal
-</Link>
+                <Link href="/deals/new" className="inline-block bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition">
+                  + Create New Deal
+                </Link>
               </div>
               
               <div className="space-y-4">
@@ -145,17 +151,11 @@ export default function MerchantDashboard() {
                     </div>
                   ))
                 ) : (
-                  // FIX: Changed "You haven't" to "You haven&apos;t"
                   <p className="text-gray-500 text-center py-4">You haven&apos;t created any deals yet.</p>
                 )}
               </div>
             </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-md border">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Edit Your Business Profile</h2>
-              <BusinessProfileForm user={user} onSave={fetchMerchantData} initialData={businessProfile} />
-            </div>
-
+            
             {error && <p className="mt-4 text-sm text-center text-red-600">{error}</p>}
           </div>
         )}
