@@ -74,8 +74,8 @@ export default function CampaignsPage() {
           profiles ( full_name, email )
         )
       `)
-      .eq('organizer_id', userId)
-      .eq('status', view);
+      .eq('organizer_id', userId);
+      // .eq('status', view); // <-- TEMPORARILY COMMENTED OUT FOR TESTING
 
     if (error) {
       console.error('Error fetching campaigns:', error);
@@ -169,9 +169,6 @@ export default function CampaignsPage() {
           </Link>
         )}
       </div>
-
-      {/* --- TEMPORARY DEBUG LINE ADDED --- */}
-      {user && <p className="text-red-500 font-mono text-xs mb-4">DEBUG: Logged in User ID is: {user.id}</p>}
       
       <div className="mb-6 border-b border-gray-200">
         <nav className="-mb-px flex space-x-6">
