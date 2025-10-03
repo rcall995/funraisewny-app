@@ -5,8 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import useUser from '@/hooks/useUser';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-
-/* eslint-disable @next/next/no-img-element */
+import Image from 'next/image'; // Use Next.js Image component
 
 type Campaign = {
   id: number;
@@ -20,10 +19,11 @@ type SupporterDisplayInfo = {
   name: string;
 };
 
+// FIX #1: Update the type to expect an array of profiles
 type MembershipWithProfile = {
   profiles: {
     full_name: string | null;
-  } | null;
+  }[] | null; // Changed to an array of objects
 };
 
 export default function SupportPage() {
@@ -62,7 +62,10 @@ export default function SupportPage() {
         const { data: membershipsData } = await supabase.from('memberships').select(`profiles ( full_name )`).eq('campaign_id', campaignData.id).order('created_at', { ascending: false }).limit(5);
         
         if (membershipsData) {
-          const displaySupporters = (membershipsData as MembershipWithProfile[]).map(s => ({ name: formatSupporterName(s.profiles?.full_name || null) }));
+          // FIX #2: Access the first item [0] of the profiles array
+          const displaySupporters = (membershipsData as MembershipWithProfile[]).map(s => ({ 
+            name: formatSupporterName(s.profiles?.[0]?.full_name || null) 
+          }));
           setSupporters(displaySupporters);
         }
 
@@ -82,7 +85,6 @@ export default function SupportPage() {
     fetchCampaignData();
   }, [supabase, slug, user, formatSupporterName]); 
   
-  // FIX: The entire function logic is now correctly placed inside the curly braces.
   const handlePurchase = async () => {
     if (!user) {
       router.push(`/login?redirect_to=/support/${slug}`);
@@ -101,7 +103,7 @@ export default function SupportPage() {
     const { error: profileError } = await supabase.from('profiles').upsert({
         id: user.id,
         full_name: newFullName,
-    }).eq('id', user.id);
+    }).select().single();
 
     if (profileError) {
       alert('Error updating profile: ' + profileError.message);
@@ -137,7 +139,15 @@ export default function SupportPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 md:p-8"> 
       <div className="w-full max-w-2xl text-center">
-        {campaign.logo_url && (<img src={campaign.logo_url} alt={`${campaign.campaign_name} logo`} className="w-32 h-32 object-contain rounded-full mx-auto mb-4 bg-white shadow-lg border" />)}
+        {campaign.logo_url && (
+          <Image 
+            src={campaign.logo_url} 
+            alt={`${campaign.campaign_name} logo`} 
+            width={128}
+            height={128}
+            className="w-32 h-32 object-contain rounded-full mx-auto mb-4 bg-white shadow-lg border" 
+          />
+        )}
         <p className="text-lg text-gray-600">You are supporting:</p>
         <h1 className="text-4xl font-bold text-slate-900 my-2">{campaign.campaign_name}</h1>
         <p className="text-gray-700 my-6 max-w-xl mx-auto">{campaign.description}</p>
@@ -175,7 +185,8 @@ export default function SupportPage() {
           </div>
         )}
         
-        <Link href="/" className="text-blue-600 hover:underline mt-8 inline-block">See all available deals</Link>
+        {/* I've updated this link to point to the correct deals page */}
+        <Link href="/deals" className="text-blue-600 hover:underline mt-8 inline-block">See all available deals</Link>
       </div>
     </div>
   );
