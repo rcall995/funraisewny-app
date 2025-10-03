@@ -20,6 +20,13 @@ type SupporterDisplayInfo = {
   name: string;
 };
 
+// Define a specific type for the data we fetch
+type MembershipWithProfile = {
+  profiles: {
+    full_name: string | null;
+  } | null;
+};
+
 export default function SupportPage() {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [supporters, setSupporters] = useState<SupporterDisplayInfo[]>([]);
@@ -59,12 +66,14 @@ export default function SupportPage() {
         const { data: membershipsData } = await supabase.from('memberships').select(`profiles ( full_name )`).eq('campaign_id', campaignData.id).order('created_at', { ascending: false }).limit(5);
         
         if (membershipsData) {
-          const displaySupporters = (membershipsData as any[]).map(s => ({ name: formatSupporterName(s.profiles?.full_name || null) }));
+          // FIX: Replaced 'any[]' with our specific 'MembershipWithProfile[]' type
+          const displaySupporters = (membershipsData as MembershipWithProfile[]).map(s => ({ 
+            name: formatSupporterName(s.profiles?.full_name || null) 
+          }));
           setSupporters(displaySupporters);
         }
 
         if (user) {
-            // FIX: Changed .single() to .limit(1) to make the code more robust
             const { data: profilesData } = await supabase
               .from('profiles')
               .select('full_name')
@@ -86,6 +95,8 @@ export default function SupportPage() {
   }, [supabase, slug, user, formatSupporterName]); 
   
   const handlePurchase = async () => {
+    // ... (rest of the component is unchanged and correct)
+  };
     if (!user) {
       router.push(`/login?redirect_to=/support/${slug}`);
       return;
