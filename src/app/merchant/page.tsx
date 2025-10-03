@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import useUser from '@/hooks/useUser';
@@ -36,8 +35,6 @@ export default function MerchantDashboard() {
     setLoading(true);
     setError(null);
 
-    // FIX #2: Removed .single() to prevent error if user owns multiple businesses.
-    // We will just load the first business profile found.
     const { data: profiles, error: profileError } = await supabase
       .from('businesses')
       .select('id, business_name, address, phone, logo_url')
@@ -49,7 +46,6 @@ export default function MerchantDashboard() {
       return;
     }
     
-    // Handle the case where multiple profiles might be returned.
     const profile = profiles && profiles.length > 0 ? profiles[0] : null;
     setBusinessProfile(profile);
 
@@ -125,7 +121,6 @@ export default function MerchantDashboard() {
             <div className="bg-white p-6 rounded-lg shadow-md border">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">Your Deals</h2>
-                {/* FIX #1: Corrected the href to point to the correct path */}
                 <Link href="/merchant/deals/new" className="inline-block bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition">
                   + Create New Deal
                 </Link>
@@ -141,16 +136,22 @@ export default function MerchantDashboard() {
                           Status: {deal.is_active ? 'Active' : 'Inactive'}
                         </p>
                       </div>
-                      <button
-                        onClick={() => toggleDealStatus(deal.id, deal.is_active)}
-                        className={`py-1 px-3 text-sm font-medium rounded-full ${
-                          deal.is_active 
-                          ? 'bg-red-100 text-red-700 hover:bg-red-200' 
-                          : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                        }`}
-                      >
-                        {deal.is_active ? 'Deactivate' : 'Activate'}
-                      </button>
+                      {/* --- NEW EDIT LINK ADDED --- */}
+                      <div className="flex items-center space-x-4">
+                        <Link href={`/merchant/deals/${deal.id}/edit`} className="text-sm font-medium text-blue-600 hover:underline">
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => toggleDealStatus(deal.id, deal.is_active)}
+                          className={`py-1 px-3 text-sm font-medium rounded-full ${
+                            deal.is_active 
+                            ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                          }`}
+                        >
+                          {deal.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                      </div>
                     </div>
                   ))
                 ) : (
