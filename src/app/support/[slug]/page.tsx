@@ -20,7 +20,6 @@ type SupporterDisplayInfo = {
   name: string;
 };
 
-// Define a specific type for the data we fetch
 type MembershipWithProfile = {
   profiles: {
     full_name: string | null;
@@ -47,11 +46,8 @@ export default function SupportPage() {
     if (!fullName) return 'An anonymous supporter';
     const parts = fullName.trim().split(/\s+/);
     const first = parts[0];
-    const lastName = parts.length > 1 ? parts[parts.length - 1] : '';
-    const lastInitial = lastName.charAt(0);
-    
-    if (first && lastInitial) { return `${first} ${lastInitial}.`; }
-    return first || 'An anonymous supporter';
+    const lastInitial = parts.length > 1 ? parts[parts.length - 1].charAt(0) : '';
+    return first && lastInitial ? `${first} ${lastInitial}.` : first;
   }, []);
 
   useEffect(() => {
@@ -66,20 +62,12 @@ export default function SupportPage() {
         const { data: membershipsData } = await supabase.from('memberships').select(`profiles ( full_name )`).eq('campaign_id', campaignData.id).order('created_at', { ascending: false }).limit(5);
         
         if (membershipsData) {
-          // FIX: Replaced 'any[]' with our specific 'MembershipWithProfile[]' type
-          const displaySupporters = (membershipsData as MembershipWithProfile[]).map(s => ({ 
-            name: formatSupporterName(s.profiles?.full_name || null) 
-          }));
+          const displaySupporters = (membershipsData as MembershipWithProfile[]).map(s => ({ name: formatSupporterName(s.profiles?.full_name || null) }));
           setSupporters(displaySupporters);
         }
 
         if (user) {
-            const { data: profilesData } = await supabase
-              .from('profiles')
-              .select('full_name')
-              .eq('id', user.id)
-              .limit(1);
-            
+            const { data: profilesData } = await supabase.from('profiles').select('full_name').eq('id', user.id).limit(1);
             const profileData = profilesData && profilesData.length > 0 ? profilesData[0] : null;
             
             if (profileData?.full_name) {
@@ -94,9 +82,8 @@ export default function SupportPage() {
     fetchCampaignData();
   }, [supabase, slug, user, formatSupporterName]); 
   
+  // FIX: The entire function logic is now correctly placed inside the curly braces.
   const handlePurchase = async () => {
-    // ... (rest of the component is unchanged and correct)
-  };
     if (!user) {
       router.push(`/login?redirect_to=/support/${slug}`);
       return;
@@ -111,8 +98,6 @@ export default function SupportPage() {
     
     const newFullName = `${firstName.trim()} ${lastName.trim()}`;
 
-    // This query uses 'upsert' which is safer. It will update the existing profile
-    // or insert a new one if it doesn't exist, preventing duplicates.
     const { error: profileError } = await supabase.from('profiles').upsert({
         id: user.id,
         full_name: newFullName,
