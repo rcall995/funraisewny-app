@@ -1,11 +1,14 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
-import DealsClientPage from './DealsClientPage';
+import DealsClientPage from './DealsClientPage'; // We will create this in Step 2
 
 // --- Type Definition ---
 export type Deal = {
+  id: number;
   title: string;
+  status: string;
+  approval_status: string;
   description: string;
   terms: string | null;
   category: string;
@@ -16,48 +19,54 @@ export type Deal = {
   }[];
 };
 
-// --- Server-Side Data Fetching ---
+// --- Server-Side Data Fetching with Diagnostics ---
 async function getServerDeals() {
   const supabase = createServerComponentClient({ cookies });
   const { data: { session } } = await supabase.auth.getSession();
+  
+  console.log('--- STEP 1: SESSION CHECK ---');
+  console.log('User is logged in:', !!session);
 
   if (!session) {
     return { deals: [], isMember: false, featured: [] };
   }
 
-  const { data: membership } = await supabase
+  const { data: membership, error: membershipError } = await supabase
     .from('memberships')
     .select('id')
     .eq('user_id', session.user.id)
     .gte('expires_at', new Date().toISOString())
     .limit(1);
 
-  if (!membership || membership.length === 0) {
+  console.log('--- STEP 2: MEMBERSHIP CHECK ---');
+  console.log({ membership, membershipError });
+
+  const isMember = !!(membership && membership.length > 0);
+  if (!isMember) {
     return { deals: [], isMember: false, featured: [] };
   }
 
-  const { data: dealData, error } = await supabase
+  // --- TEMPORARY DIAGNOSTIC QUERY ---
+  // We are removing ALL filters to see the raw database response.
+  console.log('--- STEP 3: FETCHING DEALS (NO FILTERS) ---');
+  const { data: dealData, error: dealError } = await supabase
     .from('deals')
     .select(`
-      title, description, terms, category,
-      businesses!business_id (
-        business_name, logo_url, address
-      )
-    `)
-    // FINAL FIX: Changed 'is_active' to 'status' and 'true' to 'active'
-    .eq('status', 'active')
-    .eq('approval_status', 'approved')
-    .order('created_at', { ascending: false });
+      id,
+      title,
+      status,
+      approval_status,
+      businesses ( business_name )
+    `);
 
-  if (error) {
-    console.error('Error fetching deals:', error);
-    return { deals: [], isMember: true, featured: [] };
-  }
-
+  // Log the raw response on the SERVER
+  console.log('--- STEP 4: RAW DEALS RESPONSE ---');
+  console.log({ dealData, dealError });
+  
   const deals = (dealData as Deal[]) || [];
   const featured = deals.slice(0, 5);
 
-  return { deals, isMember: true, featured };
+  return { deals, isMember, featured };
 }
 
 
