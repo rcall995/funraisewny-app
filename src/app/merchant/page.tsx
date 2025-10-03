@@ -11,13 +11,16 @@ export type BusinessProfile = {
   address: string;
   phone: string;
   logo_url: string | null; 
+  contact_role: string | null;
 };
 
+// ADDED approval_status to the Deal type
 export type Deal = {
   id: number;
   title: string;
   description: string;
   is_active: boolean;
+  approval_status: string;
 };
 
 export default function MerchantDashboard() {
@@ -37,7 +40,7 @@ export default function MerchantDashboard() {
 
     const { data: profiles, error: profileError } = await supabase
       .from('businesses')
-      .select('id, business_name, address, phone, logo_url')
+      .select('id, business_name, address, phone, logo_url, contact_role')
       .eq('owner_id', user.id);
 
     if (profileError) {
@@ -50,9 +53,10 @@ export default function MerchantDashboard() {
     setBusinessProfile(profile);
 
     if (profile) {
+      // ADDED approval_status to the select query
       const { data: dealsData, error: dealsError } = await supabase
         .from('deals')
-        .select('id, title, description, is_active')
+        .select('id, title, description, is_active, approval_status')
         .eq('business_id', profile.id)
         .order('created_at', { ascending: false });
       
@@ -132,11 +136,17 @@ export default function MerchantDashboard() {
                     <div key={deal.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
                       <div>
                         <p className="font-semibold text-gray-800">{deal.title}</p>
-                        <p className={`text-sm ${deal.is_active ? 'text-green-600' : 'text-gray-500'}`}>
-                          Status: {deal.is_active ? 'Active' : 'Inactive'}
+                        <p className={`text-sm ${deal.is_active ? 'text-green-500' : 'text-gray-500'}`}>
+                          Merchant Status: {deal.is_active ? 'Active' : 'Deactivated'}
+                        </p>
+                        {/* NEW: Display the admin approval status */}
+                        <p className={`text-sm font-semibold capitalize ${
+                            deal.approval_status === 'approved' ? 'text-green-700' : 
+                            deal.approval_status === 'rejected' ? 'text-red-700' : 'text-yellow-700'
+                        }`}>
+                            Admin Status: {deal.approval_status}
                         </p>
                       </div>
-                      {/* --- NEW EDIT LINK ADDED --- */}
                       <div className="flex items-center space-x-4">
                         <Link href={`/merchant/deals/${deal.id}/edit`} className="text-sm font-medium text-blue-600 hover:underline">
                           Edit
