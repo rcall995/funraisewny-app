@@ -42,8 +42,7 @@ export default function useUser(): UserProfile {
     setUser(user);
 
     if (user) {
-      // FINAL FIX: Changed all .single() calls to .limit(1) to prevent 406 errors
-      // when a user has multiple businesses, campaigns, or memberships.
+      // FIX: Use .limit(1) on all checks to prevent 406 errors
       const [merchantRes, fundraiserRes, memberRes] = await Promise.all([
         supabase.from('businesses').select('id').eq('owner_id', user.id).limit(1), 
         supabase.from('campaigns').select('id').eq('organizer_id', user.id).limit(1),
