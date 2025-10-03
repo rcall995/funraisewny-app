@@ -12,14 +12,11 @@ type UserProfile = {
   loading: boolean;
 };
 
-// FIX: Replaced 'any' with 'unknown' to satisfy the no-explicit-any linting rule.
 type SupabaseResponse = { data: unknown; error: unknown };
 
-// safeQuery is moved outside the hook to make it a stable utility function.
 const safeQuery = async (queryPromise: Promise<SupabaseResponse>): Promise<{ data: boolean; error: boolean }> => {
   try {
     const result = await queryPromise;
-    // FIX: Added a type assertion to safely access the 'code' property on the 'unknown' error type.
     if (result.error && (result.error as { code: string }).code !== 'PGRST116') {
       console.warn('SafeQuery non-critical error:', result.error);
       return { data: false, error: true };
@@ -45,8 +42,9 @@ export default function useUser(): UserProfile {
     setUser(user);
 
     if (user) {
+      // FINAL FIX: Changed .single() to .limit(1) to prevent 406 error
       const [merchantRes, fundraiserRes, memberRes] = await Promise.all([
-        supabase.from('businesses').select('id').eq('owner_id', user.id).single(),
+        supabase.from('businesses').select('id').eq('owner_id', user.id).limit(1), 
         supabase.from('campaigns').select('id').eq('organizer_id', user.id).limit(1).single(),
         supabase.from('memberships').select('id').eq('user_id', user.id).gte('expires_at', new Date().toISOString()).limit(1).single()
       ]);
@@ -71,7 +69,6 @@ export default function useUser(): UserProfile {
   useEffect(() => {
     getUserProfile();
     const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
-      // Re-fetch profile data when auth state changes
       setUser(session?.user ?? null);
       getUserProfile();
     });

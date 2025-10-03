@@ -65,7 +65,7 @@ export default function CampaignsPage() {
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
 
-    // FINAL FIX: Explicitly define the foreign key relationship to resolve ambiguity
+    // FINAL FIX: Explicitly define the foreign key to use, resolving the ambiguity.
     const { data, error } = await supabase
       .from('campaigns')
       .select(`
