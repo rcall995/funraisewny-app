@@ -6,83 +6,128 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
+// Helper function to format the date
+const formatDate = (dateString: string | null) => {
+  if (!dateString) return 'N/A';
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+};
+
 export default function DashboardPage() {
-  const { user, loading: userLoading } = useUser();
+  const { user, loading: userLoading, isMerchant, isFundraiser } = useUser();
   const router = useRouter();
   const supabase = createClientComponentClient();
-  const [checkedRole, setCheckedRole] = useState(false);
 
+  const [isRoleChecked, setIsRoleChecked] = useState(false);
+  const [membership, setMembership] = useState<{ expires_at: string } | null>(null);
+
+  // This effect handles redirecting users based on their role
   useEffect(() => {
-    if (user && !checkedRole) {
-      const checkUserRoleAndRedirect = async () => {
-        // Fix: Removed 'businessError' as it was unused
-        const { data: business } = await supabase
-          .from('businesses')
-          .select('id')
-          .eq('owner_id', user.id)
-          .single();
-
-        if (business) {
-          setCheckedRole(true);
-          router.push('/merchant');
-          return;
-        }
-
-        // Fix: Removed 'campaignError' as it was unused
-        const { data: campaign } = await supabase
-          .from('campaigns')
-          .select('id')
-          .eq('organizer_id', user.id)
-          .limit(1)
-          .single();
-        
-        if (campaign) {
-          setCheckedRole(true);
-          router.push('/campaigns');
-          return;
-        }
-
-        setCheckedRole(true);
-      };
-
-      checkUserRoleAndRedirect();
+    if (userLoading) {
+      return; // Wait until the user's roles are loaded
     }
-    
-    if (!user && !userLoading) {
+
+    if (!user) {
       router.push('/login');
+      return;
     }
 
-  }, [user, checkedRole, userLoading, supabase, router]);
+    // Use the booleans from our useUser hook to redirect
+    if (isMerchant) {
+      router.push('/merchant');
+    } else if (isFundraiser) {
+      router.push('/campaigns');
+    } else {
+      // If the user is neither, they are a regular member.
+      // We don't redirect. We'll show them this page.
+      setIsRoleChecked(true);
+    }
+  }, [user, userLoading, isMerchant, isFundraiser, router]);
 
-  if (userLoading || !checkedRole) {
-    return <div className="min-h-screen flex items-center justify-center"><p>Loading and checking your role...</p></div>;
+  // This effect fetches membership data ONLY if the user is a member
+  useEffect(() => {
+    const fetchMembershipData = async () => {
+      if (user && isRoleChecked) {
+        const { data } = await supabase
+          .from('memberships')
+          .select('expires_at')
+          .eq('user_id', user.id)
+          .gte('expires_at', new Date().toISOString())
+          .single();
+        setMembership(data);
+      }
+    };
+
+    fetchMembershipData();
+  }, [user, isRoleChecked, supabase]);
+
+
+  // Show a loading state until all checks are complete
+  if (userLoading || !isRoleChecked) {
+    return <div className="min-h-screen flex items-center justify-center"><p>Checking your role and loading your dashboard...</p></div>;
   }
 
-  if (user && checkedRole) {
+  // If all checks are done and the user is a member, show the "My Account" page
+  if (user && isRoleChecked) {
     return (
-      <div className="container mx-auto p-8 text-center">
-        <h1 className="text-3xl font-bold">Welcome to FunraiseWNY!</h1>
-        <p className="mt-4 text-gray-600">You are logged in as <strong>{user.email}</strong>.</p>
-        <p className="mt-4 text-gray-700">Get started by choosing your path:</p>
-        <div className="mt-8 space-y-4 md:space-y-0 md:space-x-4">
-          {/* Fix: Escaped the apostrophe in "I'm" */}
-          <Link 
-            href="/merchant" 
-            className="inline-block bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700"
-          >
-            I&apos;m a Business Owner
-          </Link>
-          {/* Fix: Escaped the apostrophe in "I'm" */}
-          <Link 
-            href="/campaigns" 
-            className="inline-block bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-green-700"
-          >
-            I&apos;m a Fundraiser
-          </Link>
+        <div className="min-h-screen bg-gray-50">
+            <main className="container mx-auto p-4 sm:p-6 lg:p-8">
+                <div className="max-w-2xl mx-auto">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-8">
+                        My Account
+                    </h1>
+
+                    <div className="bg-white p-6 rounded-lg shadow-md border mb-8">
+                        <h2 className="text-xl font-bold text-gray-800 mb-4">Account Details</h2>
+                        <div className="space-y-3 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Full Name</span>
+                                <span className="font-medium text-gray-900">{user.user_metadata?.full_name || 'N/A'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Email</span>
+                                <span className="font-medium text-gray-900">{user.email}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-lg shadow-md border">
+                        <h2 className="text-xl font-bold text-gray-800 mb-4">Membership Status</h2>
+                        {membership ? (
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-gray-500">Status</span>
+                                <span className="font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">Active</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-500">Valid Until</span>
+                                <span className="font-medium text-gray-900">{formatDate(membership.expires_at)}</span>
+                            </div>
+                            <div className="pt-4">
+                                <Link href="/deals" className="block w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-center hover:bg-blue-700 transition">
+                                    View Member Deals
+                                </Link>
+                            </div>
+                        </div>
+                        ) : (
+                        <div>
+                            <p className="text-gray-600">You do not have an active membership.</p>
+                            <Link href="/" className="mt-4 inline-block text-blue-600 hover:underline">
+                                Find a fundraiser to support
+                            </Link>
+                        </div>
+                        )}
+                    </div>
+                </div>
+            </main>
         </div>
-      </div>
     );
   }
 
+  // Fallback while redirecting
   return <div className="min-h-screen flex items-center justify-center"><p>Redirecting...</p></div>;
 }
