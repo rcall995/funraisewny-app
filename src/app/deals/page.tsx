@@ -20,14 +20,12 @@ type Deal = {
 
 // --- Reusable Deal Card Component ---
 const DealCard = ({ deal }: { deal: Deal }) => {
-    // Fallback data if a deal somehow isn't linked to a business
     const businessName = deal.businesses?.business_name || 'Local Business';
     const businessLogo = deal.businesses?.logo_url || '/placeholder.svg';
 
     return (
         <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden flex flex-col">
             <div className="p-6">
-                {/* Business Info Header */}
                 <div className="flex items-center mb-4">
                     <img src={businessLogo} alt={`${businessName} logo`} className="w-12 h-12 object-contain rounded-full border bg-white mr-4" />
                     <div>
@@ -35,13 +33,9 @@ const DealCard = ({ deal }: { deal: Deal }) => {
                         <p className="text-xs text-gray-500">{deal.businesses?.address}</p>
                     </div>
                 </div>
-                
-                {/* Deal Info */}
                 <h2 className="text-xl font-bold text-blue-600">{deal.title}</h2>
                 <p className="text-gray-600 mt-2 text-sm">{deal.description}</p>
             </div>
-            
-            {/* Terms and Conditions (in the footer of the card) */}
             {deal.terms && (
                 <div className="bg-gray-50 p-4 mt-auto border-t">
                     <p className="text-xs text-gray-500 italic">
@@ -58,12 +52,10 @@ const DealCard = ({ deal }: { deal: Deal }) => {
 export default async function DealsPage() {
   const supabase = createServerComponentClient({ cookies });
 
-  // 1. Check if a user is logged in.
   const { data: { session } } = await supabase.auth.getSession();
 
   let isMember = false;
   if (session) {
-    // 2. If logged in, check if they have an active membership.
     const { data: membership } = await supabase
       .from('memberships')
       .select('id')
@@ -75,9 +67,9 @@ export default async function DealsPage() {
     isMember = !!membership;
   }
 
-  // 3. If the user is an active member, fetch the deals.
   let deals: Deal[] = [];
   if (isMember) {
+    // THIS IS THE FIX: Explicitly specify the foreign key relationship to use
     const { data: dealData, error } = await supabase
       .from('deals')
       .select(`
@@ -85,13 +77,12 @@ export default async function DealsPage() {
         description,
         terms,
         category,
-        businesses (
+        businesses!business_id (
           business_name,
           logo_url,
           address
         )
       `)
-      // CRITICAL: Only show deals that are active AND approved!
       .eq('is_active', true)
       .eq('approval_status', 'approved')
       .order('created_at', { ascending: false });
@@ -103,7 +94,6 @@ export default async function DealsPage() {
     }
   }
 
-  // --- Render the Page ---
   return (
     <main className="bg-gray-50 min-h-screen py-12 px-4">
       <div className="container mx-auto max-w-5xl">
@@ -113,7 +103,6 @@ export default async function DealsPage() {
         </div>
 
         {isMember ? (
-          // --- RENDER THE DEALS GRID FOR MEMBERS ---
           deals.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {deals.map((deal, index) => (
@@ -127,7 +116,6 @@ export default async function DealsPage() {
             </div>
           )
         ) : (
-          // --- RENDER A CALL-TO-ACTION FOR NON-MEMBERS ---
           <div className="text-center bg-white p-16 rounded-lg shadow-lg max-w-2xl mx-auto">
             <h2 className="text-3xl font-bold text-gray-800">This Area is for Members Only</h2>
             <p className="text-gray-600 mt-4">To access these exclusive deals, you need to purchase a FunraiseWNY membership by supporting one of our active fundraisers.</p>
