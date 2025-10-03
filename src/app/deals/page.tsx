@@ -11,17 +11,20 @@ type Deal = {
   description: string;
   terms: string | null;
   category: string;
+  // FIX #1: Changed the 'businesses' property to be an array to match what the API is sending.
   businesses: {
     business_name: string;
     logo_url: string | null;
     address: string;
-  } | null;
+  }[]; // It's now an array
 };
 
 // --- Reusable Deal Card Component ---
 const DealCard = ({ deal }: { deal: Deal }) => {
-    const businessName = deal.businesses?.business_name || 'Local Business';
-    const businessLogo = deal.businesses?.logo_url || '/placeholder.svg';
+    // FIX #2: Access the first element of the 'businesses' array using [0].
+    // The optional chaining '?.' safely handles cases where the array might be empty.
+    const businessName = deal.businesses[0]?.business_name || 'Local Business';
+    const businessLogo = deal.businesses[0]?.logo_url || '/placeholder.svg';
 
     return (
         <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden flex flex-col">
@@ -30,7 +33,8 @@ const DealCard = ({ deal }: { deal: Deal }) => {
                     <img src={businessLogo} alt={`${businessName} logo`} className="w-12 h-12 object-contain rounded-full border bg-white mr-4" />
                     <div>
                         <h3 className="font-bold text-gray-800">{businessName}</h3>
-                        <p className="text-xs text-gray-500">{deal.businesses?.address}</p>
+                        {/* FIX #2 (continued): Access the first element for the address. */}
+                        <p className="text-xs text-gray-500">{deal.businesses[0]?.address}</p>
                     </div>
                 </div>
                 <h2 className="text-xl font-bold text-blue-600">{deal.title}</h2>
@@ -69,7 +73,6 @@ export default async function DealsPage() {
 
   let deals: Deal[] = [];
   if (isMember) {
-    // THIS IS THE FIX: Explicitly specify the foreign key relationship to use
     const { data: dealData, error } = await supabase
       .from('deals')
       .select(`
