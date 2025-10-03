@@ -14,9 +14,15 @@ export default function ForBusinessesPage() {
         <div className="container mx-auto max-w-4xl">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Attract New, Community-Minded Customers.</h1>
           <p className="text-lg md:text-xl opacity-90">Partner with WNY fundraisers to drive loyal supporters through your door. It&apos;s powerful, risk-free marketing that builds immense goodwill.</p>
-          <Link href="/login?role=merchant" className="mt-8 inline-block px-10 py-4 bg-white text-blue-600 font-bold rounded-lg shadow-2xl hover:bg-gray-100 transition duration-300 text-lg">
+          
+          {/* --- FIX #1: Updated this link --- */}
+          <Link 
+            href="/login?view=sign_up&redirect_to=/merchant" 
+            className="mt-8 inline-block px-10 py-4 bg-white text-blue-600 font-bold rounded-lg shadow-2xl hover:bg-gray-100 transition duration-300 text-lg"
+          >
             Get Your Business Featured (It&apos;s Free)
           </Link>
+
         </div>
       </section>
       <section className="py-24 px-4">
@@ -44,9 +50,15 @@ export default function ForBusinessesPage() {
       <section className="bg-gray-100 py-20 px-4 text-center">
           <h2 className="text-3xl font-bold text-gray-900">Ready to Get Started?</h2>
           <p className="text-lg text-gray-600 mt-2 mb-8">Join dozens of other WNY businesses today.</p>
-          <Link href="/login?role=merchant" className="px-10 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-300 text-lg">
+
+          {/* --- FIX #2: Updated this link --- */}
+          <Link 
+            href="/login?view=sign_up&redirect_to=/merchant" 
+            className="px-10 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-300 text-lg"
+          >
             Create Your Free Business Profile
           </Link>
+
       </section>
     </div>
   );
