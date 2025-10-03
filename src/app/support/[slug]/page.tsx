@@ -49,7 +49,6 @@ export default function SupportPage() {
         const { data: membershipsData } = await supabase.from('memberships').select('profiles(full_name)').eq('campaign_id', campaignData.id).order('created_at', { ascending: false }).limit(5);
         
         if (membershipsData) {
-          // FIX: Use a specific type cast to resolve the 'any' type error.
           const displaySupporters = (membershipsData as { profiles: { full_name: string | null }[] | null }[]).map(s => ({ 
             name: formatSupporterName(s.profiles?.[0]?.full_name || null) 
           }));
@@ -72,7 +71,6 @@ export default function SupportPage() {
     setProcessing(true);
 
     let userId: string;
-    // FIX: Changed 'let' to 'const' to resolve the linter error.
     const newFullName = `${firstName.trim()} ${lastName.trim()}`;
 
     if (!user) {
@@ -116,8 +114,8 @@ export default function SupportPage() {
       setError('Error creating membership: ' + membershipError.message);
       setProcessing(false);
     } else {
-      router.refresh(); 
-      router.push('/deals'); 
+      // Use a full page navigation to ensure the server receives the new session cookie.
+      window.location.href = '/deals';
     }
   };
 
