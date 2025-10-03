@@ -7,9 +7,16 @@ export default function ForFundraisersPage() {
       <section className="bg-green-600 text-white text-center py-20 px-4">
         <h1 className="text-4xl md:text-5xl font-extrabold mb-4">The Easiest & Most Profitable Fundraiser You&apos;ll Ever Run.</h1>
         <p className="text-lg md:text-xl opacity-90 max-w-3xl mx-auto">Stop selling wrapping paper. Offer your community a product they genuinely want—a year of savings at local businesses—and keep a large portion of every sale.</p>
-        <Link href="/login" className="mt-8 inline-block px-10 py-4 bg-white text-green-600 font-bold rounded-lg shadow-2xl hover:bg-gray-100 transition duration-300 text-lg">
+        
+        {/* --- THIS IS THE FIX --- */}
+        {/* This link now points to the sign-up form and redirects to the new campaign page. */}
+        <Link 
+          href="/login?view=sign_up&redirect_to=/campaigns/new" 
+          className="mt-8 inline-block px-10 py-4 bg-white text-green-600 font-bold rounded-lg shadow-2xl hover:bg-gray-100 transition duration-300 text-lg"
+        >
           Start Your Fundraiser Today
         </Link>
+
       </section>
 
       {/* Benefits Section */}
