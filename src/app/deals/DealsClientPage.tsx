@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin, Search } from 'lucide-react';
 import { type Deal } from './page'; // Import the Deal type from our server page
