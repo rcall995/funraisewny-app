@@ -1,99 +1,43 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
-import DealsClientPage from './DealsClientPage'; // We will create this in Step 2
+import DealsClientPage from './DealsClientPage';
 
-// --- Type Definition ---
 export type Deal = {
-  id: number;
-  title: string;
-  status: string;
-  approval_status: string;
-  description: string;
-  terms: string | null;
-  category: string;
-  businesses: {
-    business_name: string;
-    logo_url: string | null;
-    address: string;
-  }[];
+  title: string; description: string; terms: string | null; category: string;
+  business_name: string | null; logo_url: string | null; address: string | null;
 };
 
-// --- Server-Side Data Fetching with Diagnostics ---
 async function getServerDeals() {
-  const supabase = createServerComponentClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  console.log('--- STEP 1: SESSION CHECK ---');
-  console.log('User is logged in:', !!session);
+  const cookieStore = cookies();
+  const supabase = createServerComponentClient({ cookies: () => cookieStore });
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session) {
-    return { deals: [], isMember: false, featured: [] };
+  if (!user) { return { deals: [], isMember: false, featured: [] }; }
+
+  const { data, error } = await supabase.rpc('get_live_deals');
+
+  if (error) {
+    console.error("Fatal Error calling get_live_deals:", JSON.stringify(error, null, 2));
+    return { deals: [], isMember: true, featured: [] };
   }
-
-  const { data: membership, error: membershipError } = await supabase
-    .from('memberships')
-    .select('id')
-    .eq('user_id', session.user.id)
-    .gte('expires_at', new Date().toISOString())
-    .limit(1);
-
-  console.log('--- STEP 2: MEMBERSHIP CHECK ---');
-  console.log({ membership, membershipError });
-
-  const isMember = !!(membership && membership.length > 0);
-  if (!isMember) {
-    return { deals: [], isMember: false, featured: [] };
-  }
-
-  // --- TEMPORARY DIAGNOSTIC QUERY ---
-  // We are removing ALL filters to see the raw database response.
-  console.log('--- STEP 3: FETCHING DEALS (NO FILTERS) ---');
-  const { data: dealData, error: dealError } = await supabase
-    .from('deals')
-    .select(`
-      id,
-      title,
-      status,
-      approval_status,
-      businesses ( business_name )
-    `);
-
-  // Log the raw response on the SERVER
-  console.log('--- STEP 4: RAW DEALS RESPONSE ---');
-  console.log({ dealData, dealError });
   
-  const deals = (dealData as Deal[]) || [];
-  const featured = deals.slice(0, 5);
-
-  return { deals, isMember, featured };
+  const deals = (data as Deal[]) || [];
+  return { deals, isMember: true, featured: deals.slice(0, 5) };
 }
 
-
-// --- This is the main Server Component for the page ---
 export default async function DealsPage() {
   const { deals, isMember, featured } = await getServerDeals();
-
   if (!isMember) {
     return (
-        <main className="bg-gray-50 min-h-screen py-12 px-4 flex items-center justify-center">
-            <div className="container mx-auto max-w-2xl text-center bg-white p-16 rounded-lg shadow-xl">
-                <h1 className="text-3xl font-bold mb-4 text-gray-900">
-                    Members-Only Deals Await!
-                </h1>
-                <p className="text-gray-600 mb-8">Unlock exclusive WNY savings by supporting a local fundraiser.</p>
-                <Link href="/login" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition-colors">
-                    Login or Sign Up to Become a Member
-                </Link>
-            </div>
-        </main>
+      <main className="bg-gray-50 min-h-screen py-12 px-4 flex items-center justify-center">
+        <div className="container mx-auto max-w-2xl text-center bg-white p-16 rounded-lg shadow-xl">
+          <h1 className="text-3xl font-bold mb-4 text-gray-900">Members-Only Deals Await!</h1>
+          <p className="text-gray-600 mb-8">Unlock exclusive WNY savings by supporting a local fundraiser.</p>
+          <Link href="/login" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg">Login or Sign Up</Link>
+        </div>
+      </main>
     );
   }
-
-  return (
-    <DealsClientPage 
-      initialDeals={deals} 
-      initialFeatured={featured} 
-    />
-  );
+  return ( <DealsClientPage initialDeals={deals} initialFeatured={featured} /> );
 }

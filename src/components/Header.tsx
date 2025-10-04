@@ -8,10 +8,10 @@ import { usePathname } from 'next/navigation';
 /* eslint-disable @next/next/no-img-element */
 
 export default function Header() {
-  const { user, loading, isMerchant, isFundraiser, isMember } = useUser();
+  // RENAMED isMerchant to isBusinessOwner
+  const { user, loading, isBusinessOwner, isFundraiser, isMember } = useUser();
   const pathname = usePathname();
 
-  // No change here, we still don't want a header on the login page.
   if (pathname === '/login') {
     return null;
   }
@@ -30,28 +30,24 @@ export default function Header() {
           {loading ? (
             <div className="h-8 w-36 bg-gray-200 rounded animate-pulse"></div>
           ) : user ? (
-            // --- UPDATED LOGGED-IN VIEW ---
             <>
-              {/* FIX: Points to /deals and hides if already on /deals */}
               {isMember && pathname !== '/deals' && (
                 <Link href="/deals" className="text-gray-600 hover:text-blue-600">View Deals</Link>
               )}
-              {/* FIX: Hides if already on /merchant */}
-              {isMerchant && pathname !== '/merchant' && (
-                <Link href="/merchant" className="text-gray-600 hover:text-blue-600">Merchant Portal</Link>
+              {/* UPDATED to use isBusinessOwner and new text */}
+              {isBusinessOwner && pathname !== '/merchant' && (
+                <Link href="/merchant" className="text-gray-600 hover:text-blue-600">Business Portal</Link>
               )}
-              {/* FIX: Hides if already on /campaigns */}
               {isFundraiser && pathname !== '/campaigns' && (
                   <Link href="/campaigns" className="text-gray-600 hover:text-blue-600">Fundraiser Portal</Link>
               )}
-              {/* FIX: Hides if already on /dashboard */}
-              {!isMerchant && !isFundraiser && pathname !== '/dashboard' && (
-                  <Link href="/dashboard" className="text-gray-600 hover:text-blue-600">My Dashboard</Link>
+              {/* UPDATED to use isBusinessOwner */}
+              {!isBusinessOwner && !isFundraiser && pathname !== '/dashboard' && (
+                  <Link href="/dashboard" className="text-gray-600 hover:text-blue-600">My Account</Link>
               )}
               <SignOutButton />
             </>
           ) : (
-            // --- LOGGED-OUT VIEW (No changes) ---
             <>
               <Link href="/login" className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Login</Link>
             </>

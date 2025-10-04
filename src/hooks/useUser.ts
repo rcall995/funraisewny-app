@@ -4,28 +4,18 @@ import { useEffect, useState, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { User } from '@supabase/supabase-js';
 
-type UserProfile = { user: User | null; isMerchant: boolean; isFundraiser: boolean; isMember: boolean; loading: boolean; };
-type SupabaseResponse = { data: unknown; error: unknown };
-
-const safeQuery = async (queryPromise: Promise<SupabaseResponse>): Promise<{ data: boolean; error: boolean }> => {
-  try {
-    const result = await queryPromise;
-    if (result.error && (result.error as { code: string }).code !== 'PGRST116') {
-      console.warn('SafeQuery non-critical error:', result.error);
-      return { data: false, error: true };
-    }
-    const hasData = result.data !== null && (Array.isArray(result.data) ? result.data.length > 0 : Object.keys(result.data as object).length > 0);
-    return { data: hasData, error: false };
-  } catch (e) {
-    console.error('SafeQuery exception:', e);
-    return { data: false, error: true };
-  }
+type UserProfile = {
+  user: User | null;
+  isBusinessOwner: boolean;
+  isFundraiser: boolean;
+  isMember: boolean;
+  loading: boolean;
 };
 
 export default function useUser(): UserProfile {
   const supabase = createClientComponentClient();
   const [user, setUser] = useState<User | null>(null);
-  const [isMerchant, setIsMerchant] = useState(false);
+  const [isBusinessOwner, setIsBusinessOwner] = useState(false);
   const [isFundraiser, setIsFundraiser] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -35,23 +25,17 @@ export default function useUser(): UserProfile {
     setUser(user);
 
     if (user) {
-      const [merchantRes, fundraiserRes, memberRes] = await Promise.all([
-        supabase.from('businesses').select('id').eq('owner_id', user.id).limit(1), 
-        supabase.from('campaigns').select('id').eq('organizer_id', user.id).limit(1),
-        supabase.from('memberships').select('id').eq('user_id', user.id).gte('expires_at', new Date().toISOString()).limit(1)
+      const [businessRes, fundraiserRes, memberRes] = await Promise.all([
+        supabase.from('businesses').select('id', { count: 'exact', head: true }).eq('owner_id', user.id), 
+        supabase.from('campaigns').select('id', { count: 'exact', head: true }).eq('organizer_id', user.id),
+        supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('user_id', user.id).gte('expires_at', new Date().toISOString())
       ]);
       
-      const [merchantData, fundraiserData, memberData] = await Promise.all([
-        safeQuery(Promise.resolve(merchantRes as SupabaseResponse)),
-        safeQuery(Promise.resolve(fundraiserRes as SupabaseResponse)),
-        safeQuery(Promise.resolve(memberRes as SupabaseResponse))
-      ]);
-
-      setIsMerchant(merchantData.data);
-      setIsFundraiser(fundraiserData.data);
-      setIsMember(memberData.data);
+      setIsBusinessOwner((businessRes.count ?? 0) > 0);
+      setIsFundraiser((fundraiserRes.count ?? 0) > 0);
+      setIsMember((memberRes.count ?? 0) > 0);
     } else {
-      setIsMerchant(false);
+      setIsBusinessOwner(false);
       setIsFundraiser(false);
       setIsMember(false);
     }
@@ -67,5 +51,5 @@ export default function useUser(): UserProfile {
     return () => authListener?.subscription.unsubscribe();
   }, [supabase, getUserProfile]);
 
-  return { user, isMerchant, isFundraiser, isMember, loading };
+  return { user, isBusinessOwner, isFundraiser, isMember, loading };
 }
