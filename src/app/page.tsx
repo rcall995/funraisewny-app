@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -20,13 +21,13 @@ export default function HomePage() {
       {/* Hero Section (Marketing/Recruitment Content) */}
       <section className="text-center py-20 md:py-28 px-4 bg-gray-50">
         <div className="container mx-auto max-w-4xl">
-          <img
-            src="/image_acafef.png"
+          <Image
+            src="/logo.png"
             alt="FunraiseWNY Logo"
-            // FIX: New responsive sizing for the logo
-            // mobile: w-4/5 (80% width) | desktop: max-w-[400px]
-            className="w-4/5 max-w-[400px] mx-auto mb-8" 
-            onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
+            width={400}
+            height={120}
+            className="w-4/5 max-w-[400px] mx-auto mb-8 h-auto"
+            priority
           />
           <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
             The Easiest Way to Fundraise in Western New York.

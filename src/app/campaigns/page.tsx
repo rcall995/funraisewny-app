@@ -1,14 +1,17 @@
+// src/app/campaigns/page.tsx
+
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import useUser from '@/hooks/useUser';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useRouter } from 'next/navigation';
 
 // --- Type Definitions ---
 type Membership = {
   fundraiser_share: number;
-  profiles: { full_name: string; } | null; // Removed email from type
+  profile_full_name: string | null;
 };
 type Campaign = {
   id: number;
@@ -18,48 +21,61 @@ type Campaign = {
   start_date: string | null;
   end_date: string | null;
   status: string;
-  memberships: Membership[];
+  membership_profiles_view: Membership[];
 };
 
-// --- Feather Icons (Simple SVG for common use) ---
-const CopyIcon = ({ className = 'w-5 h-5' }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v2M9 17v-5"></path></svg>
-);
-const FacebookIcon = ({ className = 'w-5 h-5' }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.77-1.63 1.563V12h3.292l-.53 3.393h-2.762v6.987C18.343 21.128 22 16.991 22 12z" /></svg>
-);
-const TwitterIcon = ({ className = 'w-5 h-5' }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.883L4.99 21.75H1.68l7.228-8.26L1.5 2.25h3.308l5.98 7.859L17.65 2.25h.594zm-2.774 15.65H15.1l-6.573-7.737L5.438 4.25H6.96l6.32 7.464L18.244 2.25h-1.554z" /></svg>
+// --- Feather Icon Components ---
+const LinkIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+  </svg>
 );
 
-// --- Reusable Share Button Component ---
-type ShareButtonProps = {
-    onClick: () => void;
-    icon: React.ReactNode;
-    label: string;
-    bgColor: string;
-    isCopied?: boolean;
-};
-const ShareButton: React.FC<ShareButtonProps> = ({ onClick, icon, label, bgColor, isCopied = false }) => (
+const CheckIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"></polyline>
+  </svg>
+);
+
+// --- ShareButton Component ---
+const ShareButton = ({ url, campaignName, copiedId, setCopiedId, campaignId }: {
+  url: string;
+  campaignName: string;
+  copiedId: number | null;
+  setCopiedId: (id: number | null) => void;
+  campaignId: number;
+}) => {
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(campaignId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  return (
     <button
-        onClick={onClick}
-        className={`flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white ${bgColor} rounded-md transition duration-150 ease-in-out hover:opacity-90`}
-        aria-label={`Share on ${label}`}
+      onClick={handleCopy}
+      className="flex items-center space-x-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
     >
-        {icon}
-        <span>{isCopied ? 'Copied!' : label}</span>
+      {copiedId === campaignId ? <CheckIcon /> : <LinkIcon />}
+      <span>{copiedId === campaignId ? 'Copied!' : 'Copy Link'}</span>
     </button>
-);
-
+  );
+};
 
 // --- Main Component ---
 export default function CampaignsPage() {
-  const { user, loading: userLoading } = useUser();
+  const { user, loading: userLoading, profile } = useUser();
+  const router = useRouter();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [view, setView] = useState<'active' | 'ended'>('active');
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<{ [key: number]: string }>({}); 
+  const [activeTab, setActiveTab] = useState<{ [key: number]: string }>({});
   const supabase = createClientComponentClient();
 
   const fetchCampaigns = useCallback(async (userId: string) => {
@@ -69,9 +85,9 @@ export default function CampaignsPage() {
       .from('campaigns')
       .select(`
         *,
-        memberships!memberships_campaign_id_fkey (
+        membership_profiles_view (
           fundraiser_share,
-          profiles ( full_name ) 
+          profile_full_name
         )
       `)
       .eq('organizer_id', userId)
@@ -96,57 +112,29 @@ export default function CampaignsPage() {
   }, [user, userLoading, view, fetchCampaigns]);
 
   const handleEndCampaign = async (campaignId: number) => {
-    if (window.confirm('Are you sure you want to end this campaign? It will be moved to your "Past Campaigns" list.')) {
-      const { error } = await supabase
-        .from('campaigns')
-        .update({ status: 'ended' })
-        .eq('id', campaignId);
+    if (!confirm('Are you sure you want to end this campaign? This action cannot be undone.')) {
+      return;
+    }
 
-      if (error) {
-        alert('Error ending campaign: ' + error.message);
-      } else {
-        if (user) fetchCampaigns(user.id);
-      }
+    const { error } = await supabase
+      .from('campaigns')
+      .update({ status: 'ended' })
+      .eq('id', campaignId);
+
+    if (error) {
+      console.error('Error ending campaign:', error);
+      alert('Failed to end campaign. Please try again.');
+    } else {
+      if (user) fetchCampaigns(user.id);
     }
   };
-  
-  const getShareLink = (slug: string): string => {
-    if (typeof window === 'undefined') return '';
+
+  const getShareLink = (slug: string) => {
     return `${window.location.origin}/support/${slug}`;
   };
-  
-  const handleCopyLink = (campaign: Campaign) => {
-    const link = getShareLink(campaign.slug);
-    navigator.clipboard.writeText(link).then(() => {
-      setCopiedId(campaign.id);
-      setTimeout(() => setCopiedId(null), 2000);
-    });
-  };
 
-  const shareOnFacebook = (campaign: Campaign) => {
-    const shareUrl = getShareLink(campaign.slug);
-    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
-    window.open(fbUrl, '_blank', 'width=600,height=400');
-  };
-
-  const shareOnTwitter = (campaign: Campaign) => {
-    const shareUrl = getShareLink(campaign.slug);
-    const text = `Support our fundraiser for ${campaign.campaign_name}! #funraisewny`;
-    const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
-    window.open(twitterUrl, '_blank', 'width=600,height=400');
-  };
-  
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'UTC',
-    });
-  };
-
-  if (loading || userLoading) {
+  // Final Render Guards
+  if (userLoading || loading) {
     return <div className="p-8 text-center">Loading your campaigns...</div>;
   }
 
@@ -160,128 +148,171 @@ export default function CampaignsPage() {
   }
 
   return (
-    <div className="container mx-auto p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Your Fundraising Campaigns</h1>
-        {view === 'active' && (
-          <Link href="/campaigns/new" className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">
-            + New Campaign
-          </Link>
-        )}
-      </div>
-      
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-6">
-          <button onClick={() => setView('active')} className={`py-3 px-1 border-b-2 font-medium text-sm ${view === 'active' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Active</button>
-          <button onClick={() => setView('ended')} className={`py-3 px-1 border-b-2 font-medium text-sm ${view === 'ended' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Past Campaigns</button>
-        </nav>
-      </div>
-
-      {campaigns.length > 0 ? (
-        <div className="space-y-8">
-          {campaigns.map((campaign) => {
-            const totalRaised = campaign.memberships.reduce((sum, m) => sum + (m.fundraiser_share || 0), 0);
-            const supportersCount = campaign.memberships.length;
-            const progressPercentage = campaign.goal_amount > 0 ? (totalRaised / campaign.goal_amount) * 100 : 0;
-            const currentTab = activeTab[campaign.id] || 'stats';
-            const shareableLink = getShareLink(campaign.slug);
-
-            return (
-              <div key={campaign.id} className={`bg-gray-50 p-6 rounded-lg shadow-md ${campaign.status === 'ended' ? 'opacity-70' : ''}`}>
-                <div className="flex justify-between items-start border-b border-gray-200 pb-4">
-                  <div>
-                    <h2 className="text-2xl font-semibold">{campaign.campaign_name}</h2>
-                    <p className="text-sm text-gray-500 mt-1">Goal: ${campaign.goal_amount.toLocaleString()}</p>
-                    <div className="text-xs text-gray-400 mt-2 font-medium">
-                      <span>{formatDate(campaign.start_date)}</span> - <span>{formatDate(campaign.end_date)}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    {campaign.status === 'active' && (<Link href={`/campaigns/${campaign.id}/edit`} className="text-sm font-medium text-blue-600 hover:text-blue-800">Edit</Link>)}
-                    {campaign.status === 'active' && (<button onClick={() => handleEndCampaign(campaign.id)} className="text-sm font-medium text-red-600 hover:text-red-800">End Campaign</button>)}
-                  </div>
-                </div>
-                
-                <div className="mt-4 p-4 rounded-lg border border-gray-200 shadow-sm">
-                  <h3 className="text-lg font-semibold mb-3 text-gray-700">Share Your Campaign</h3>
-                  <div className="mt-2 flex flex-wrap gap-3">
-                    <ShareButton
-                        onClick={() => handleCopyLink(campaign)}
-                        icon={<CopyIcon />}
-                        label="Copy Link"
-                        bgColor="bg-gray-600 hover:bg-gray-700"
-                        isCopied={copiedId === campaign.id}
-                    />
-                    <ShareButton
-                        onClick={() => shareOnFacebook(campaign)}
-                        icon={<FacebookIcon />}
-                        label="Facebook"
-                        bgColor="bg-blue-800 hover:bg-blue-900"
-                    />
-                    <ShareButton
-                        onClick={() => shareOnTwitter(campaign)}
-                        icon={<TwitterIcon />}
-                        label="X (Twitter)"
-                        bgColor="bg-sky-500 hover:bg-sky-600"
-                    />
-                    <a 
-                        href={`mailto:?subject=Support my fundraiser: ${campaign.campaign_name}&body=Please help me reach my goal for this great cause! Donate here: ${shareableLink}`}
-                        className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-red-500 rounded-md transition duration-150 ease-in-out hover:opacity-90"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 4v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7"></path></svg>
-                        <span>Email</span>
-                    </a>
-                  </div>
-                </div>
-
-                <div className="mt-4 border-b border-gray-200">
-                  <nav className="-mb-px flex space-x-6" aria-label="Tabs">
-                    <button onClick={() => setActiveTab({...activeTab, [campaign.id]: 'stats'})} className={`py-3 px-1 border-b-2 font-medium text-sm ${currentTab === 'stats' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Stats</button>
-                    <button onClick={() => setActiveTab({...activeTab, [campaign.id]: 'supporters'})} className={`py-3 px-1 border-b-2 font-medium text-sm ${currentTab === 'supporters' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Supporters ({supportersCount})</button>
-                  </nav>
-                </div>
-
-                <div className="mt-6">
-                  {currentTab === 'stats' && (
-                    <div>
-                      <div className="flex justify-between items-end mb-1">
-                        <p className="text-3xl font-bold text-green-600">${totalRaised.toLocaleString()}</p>
-                        <p className="text-sm text-gray-500">{supportersCount} {supportersCount === 1 ? 'supporter' : 'supporters'}</p>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-4"><div className="bg-green-600 h-4 rounded-full text-white text-xs flex items-center justify-center" style={{ width: `${progressPercentage > 100 ? 100 : progressPercentage}%` }}>{progressPercentage.toFixed(0)}%</div></div>
-                    </div>
-                  )}
-                  {currentTab === 'supporters' && (
-                    <div>
-                      <h3 className="text-lg font-semibold">Supporter List</h3>
-                      {supportersCount > 0 ? (
-                        <ul className="mt-4 space-y-2 text-sm text-gray-700 max-h-48 overflow-y-auto">
-                          {campaign.memberships.map((m, index) => (
-                            <li key={index} className="p-2 bg-gray-50 rounded">
-                              <strong>{m.profiles?.full_name || 'Anonymous Supporter'}</strong> (Raised: ${m.fundraiser_share.toLocaleString()})
-                            </li>
-                          ))}
-                        </ul>
-                      ) : ( <p className="text-sm text-gray-500 mt-2">No supporters yet.</p> )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="text-center bg-white p-12 rounded-lg shadow-md">
-          {view === 'active' ? (
-            <>
-              <h2 className="text-xl font-semibold text-gray-700">You have no active campaigns.</h2>
-              <Link href="/campaigns/new" className="mt-6 inline-block bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700">Create a Campaign</Link>
-            </>
-          ) : (
-            <p className="text-gray-600">You have no past campaigns.</p>
+    <div className="min-h-screen bg-gray-50">
+      <main className="container mx-auto p-8">
+        {/* Header with New Campaign Button */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Your Fundraising Campaigns</h1>
+          {view === 'active' && (
+            <Link
+              href="/campaigns/new"
+              className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition shadow-md"
+            >
+              + New Campaign
+            </Link>
           )}
         </div>
-      )}
+
+        {/* View Toggle Buttons */}
+        <div className="flex space-x-2 mb-8">
+          <button
+            onClick={() => setView('active')}
+            className={`px-6 py-2 rounded-lg font-medium transition ${
+              view === 'active'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            Active Campaigns
+          </button>
+          <button
+            onClick={() => setView('ended')}
+            className={`px-6 py-2 rounded-lg font-medium transition ${
+              view === 'ended'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            Ended Campaigns
+          </button>
+        </div>
+
+        {/* Campaign Cards */}
+        {campaigns.length === 0 ? (
+          <div className="bg-white p-12 rounded-lg shadow-md text-center">
+            <h2 className="text-xl font-semibold text-gray-700 mb-2">
+              {view === 'active' ? 'No Active Campaigns' : 'No Ended Campaigns'}
+            </h2>
+            <p className="text-gray-500 mb-6">
+              {view === 'active'
+                ? 'Create your first campaign to start fundraising!'
+                : 'You have not ended any campaigns yet.'}
+            </p>
+            {view === 'active' && (
+              <Link
+                href="/campaigns/new"
+                className="inline-block bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition"
+              >
+                Create Your First Campaign
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {campaigns.map((campaign) => {
+              const members = campaign.membership_profiles_view || [];
+              const totalMembers = members.length;
+              const totalRevenue = members.reduce((sum, m) => sum + (m.fundraiser_share || 0), 0);
+
+              return (
+                <div key={campaign.id} className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                  {/* Campaign Header */}
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold text-gray-900 mb-1">{campaign.campaign_name}</h2>
+                      <p className="text-sm text-gray-500">
+                        Goal: ${campaign.goal_amount?.toLocaleString() || '0'}
+                      </p>
+                    </div>
+                    {view === 'active' && (
+                      <div className="flex space-x-3">
+                        <Link
+                          href={`/campaigns/${campaign.id}/edit`}
+                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => handleEndCampaign(campaign.id)}
+                          className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition text-sm font-medium"
+                        >
+                          End Campaign
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Campaign Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-600 mb-1">Total Members</p>
+                      <p className="text-3xl font-bold text-blue-600">{totalMembers}</p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-600 mb-1">Your Share</p>
+                      <p className="text-3xl font-bold text-green-600">${totalRevenue.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-600 mb-1">Progress</p>
+                      <p className="text-3xl font-bold text-purple-600">
+                        {campaign.goal_amount ? Math.round((totalRevenue / campaign.goal_amount) * 100) : 0}%
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Share Section */}
+                  {view === 'active' && (
+                    <div className="border-t pt-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Share Your Campaign:</p>
+                          <p className="text-xs text-gray-500 break-all">
+                            {getShareLink(campaign.slug)}
+                          </p>
+                        </div>
+                        <ShareButton
+                          url={getShareLink(campaign.slug)}
+                          campaignName={campaign.campaign_name}
+                          copiedId={copiedId}
+                          setCopiedId={setCopiedId}
+                          campaignId={campaign.id}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Members Tab Section (Optional - can show member list) */}
+                  {totalMembers > 0 && (
+                    <div className="border-t mt-4 pt-4">
+                      <button
+                        onClick={() => setActiveTab(prev => ({ ...prev, [campaign.id]: prev[campaign.id] === 'members' ? '' : 'members' }))}
+                        className="text-sm text-blue-600 hover:underline font-medium"
+                      >
+                        {activeTab[campaign.id] === 'members' ? 'Hide Members' : `View All ${totalMembers} Members`}
+                      </button>
+
+                      {activeTab[campaign.id] === 'members' && (
+                        <div className="mt-4 space-y-2">
+                          {members.map((member, idx) => (
+                            <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                              <span className="text-sm font-medium text-gray-700">
+                                {member.profile_full_name || 'Anonymous Supporter'}
+                              </span>
+                              <span className="text-sm text-green-600 font-semibold">
+                                +${member.fundraiser_share?.toFixed(2) || '0.00'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
     </div>
   );
 }

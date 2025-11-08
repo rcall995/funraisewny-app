@@ -15,6 +15,7 @@ async function getServerDeals() {
 
   if (!user) { return { deals: [], isMember: false, featured: [] }; }
 
+  // Use the robust database function to get deals securely
   const { data, error } = await supabase.rpc('get_live_deals');
 
   if (error) {
@@ -23,7 +24,10 @@ async function getServerDeals() {
   }
   
   const deals = (data as Deal[]) || [];
-  return { deals, isMember: true, featured: deals.slice(0, 5) };
+  const { data: membership, count } = await supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('user_id', user.id).gte('expires_at', new Date().toISOString());
+  const isMember = (count ?? 0) > 0;
+
+  return { deals, isMember, featured: deals.slice(0, 5) };
 }
 
 export default async function DealsPage() {
@@ -34,7 +38,7 @@ export default async function DealsPage() {
         <div className="container mx-auto max-w-2xl text-center bg-white p-16 rounded-lg shadow-xl">
           <h1 className="text-3xl font-bold mb-4 text-gray-900">Members-Only Deals Await!</h1>
           <p className="text-gray-600 mb-8">Unlock exclusive WNY savings by supporting a local fundraiser.</p>
-          <Link href="/login" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg">Login or Sign Up</Link>
+          <Link href="/support" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg">Find a Fundraiser to Support</Link>
         </div>
       </main>
     );

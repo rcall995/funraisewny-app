@@ -1,19 +1,14 @@
-import { Suspense } from 'react';
-import LoginForm from './LoginForm';
+// src/app/login/page.tsx
 
-function LoginPageContent() {
-    return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-            <LoginForm />
-        </div>
-    )
-}
+import { Suspense } from 'react';
+import LoginForm from './login-form';
 
 export default function LoginPage() {
   return (
-    // You must wrap the component that uses useSearchParams in a Suspense boundary
-    <Suspense fallback={<div>Loading...</div>}>
-      <LoginPageContent />
-    </Suspense>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <Suspense fallback={<div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">Loading...</div>}>
+        <LoginForm />
+      </Suspense>
+    </div>
   );
 }

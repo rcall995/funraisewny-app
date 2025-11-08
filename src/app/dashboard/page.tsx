@@ -1,9 +1,11 @@
+// src/app/dashboard/page.tsx
+
 'use client';
 
 import useUser from '@/hooks/useUser';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 const formatDate = (dateString: string | null) => {
@@ -14,47 +16,51 @@ const formatDate = (dateString: string | null) => {
 };
 
 export default function DashboardPage() {
-  // RENAMED isMerchant to isBusinessOwner
-  const { user, loading: userLoading, isBusinessOwner, isFundraiser } = useUser();
-  const router = useRouter();
-  const supabase = createClientComponentClient();
+    const { user, loading: userLoading, profile } = useUser();
+    const router = useRouter();
+    const supabase = createClientComponentClient(); 
 
-  const [isRoleChecked, setIsRoleChecked] = useState(false);
-  const [membership, setMembership] = useState<{ expires_at: string } | null>(null);
+    const [membership, setMembership] = useState<{ expires_at: string } | null>(null);
 
-  useEffect(() => {
-    if (userLoading) return;
-    if (!user) { router.push('/login'); return; }
+    const fetchMembershipData = useCallback(async () => {
+        if (!user) return;
 
-    // UPDATED to use isBusinessOwner
-    if (isBusinessOwner) {
-      router.push('/merchant');
-    } else if (isFundraiser) {
-      router.push('/campaigns');
-    } else {
-      setIsRoleChecked(true);
-    }
-  }, [user, userLoading, isBusinessOwner, isFundraiser, router]);
-
-  useEffect(() => {
-    const fetchMembershipData = async () => {
-      if (user && isRoleChecked) {
-        const { data: membershipsData } = await supabase.from('memberships').select('expires_at').eq('user_id', user.id).gte('expires_at', new Date().toISOString()).limit(1);
+        const { data: membershipsData } = await supabase.from('memberships')
+            .select('expires_at')
+            .eq('user_id', user.id)
+            .gte('expires_at', new Date().toISOString())
+            .limit(1);
+        
         if (membershipsData && membershipsData.length > 0) {
             setMembership(membershipsData[0]);
         } else {
             setMembership(null);
         }
-      }
-    };
-    fetchMembershipData();
-  }, [user, isRoleChecked, supabase]);
+    }, [user, supabase]);
 
-  if (userLoading || !isRoleChecked) {
-    return <div className="min-h-screen flex items-center justify-center"><p>Checking your role and loading your dashboard...</p></div>;
-  }
+    // --- THIS IS THE FIX ---
+    // We move the redirect logic into a useEffect hook.
+    // This hook runs *after* the component renders, which is the correct place for side-effects.
+    useEffect(() => {
+        if (!userLoading && !user) {
+            // If loading is finished and there is still no user, then redirect.
+            router.replace('/login');
+        }
+        
+        // If the user exists, fetch their membership data.
+        if (user) { 
+            fetchMembershipData();
+        }
+    }, [user, userLoading, router, fetchMembershipData]); // Dependencies for the effect
 
-  if (user && isRoleChecked) {
+    // This is the new loading state. It will show until the useEffect has had a chance to run.
+    // It handles both the initial load and the brief moment before a non-logged-in user is redirected.
+    if (userLoading || !user) {
+        return <div className="min-h-screen flex items-center justify-center"><p>Loading your account...</p></div>;
+    }
+
+    // If the code reaches here, it means userLoading is false AND the user object exists.
+    // It is now safe to render the dashboard.
     return (
         <div className="min-h-screen bg-gray-50">
             <main className="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -63,8 +69,14 @@ export default function DashboardPage() {
                     <div className="bg-white p-6 rounded-lg shadow-md border mb-8">
                         <h2 className="text-xl font-bold text-gray-800 mb-4">Account Details</h2>
                         <div className="space-y-3 text-sm">
-                            <div className="flex justify-between"><span className="text-gray-500">Full Name</span><span className="font-medium text-gray-900">{user.user_metadata?.full_name || 'N/A'}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-500">Email</span><span className="font-medium text-gray-900">{user.email}</span></div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Full Name</span>
+                                <span className="font-medium text-gray-900">{profile?.full_name || 'N/A'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Email</span>
+                                <span className="font-medium text-gray-900">{user.email}</span>
+                            </div>
                         </div>
                     </div>
                     <div className="bg-white p-6 rounded-lg shadow-md border">
@@ -78,7 +90,9 @@ export default function DashboardPage() {
                         ) : (
                         <div>
                             <p className="text-gray-600">You do not have an active membership.</p>
-                            <Link href="/" className="mt-4 inline-block text-blue-600 hover:underline">Find a fundraiser to support</Link>
+                            <Link href="/support" className="mt-4 inline-block text-blue-600 hover:underline">
+                                Find a fundraiser to support
+                            </Link> 
                         </div>
                         )}
                     </div>
@@ -86,7 +100,4 @@ export default function DashboardPage() {
             </main>
         </div>
     );
-  }
-
-  return <div className="min-h-screen flex items-center justify-center"><p>Redirecting...</p></div>;
 }
