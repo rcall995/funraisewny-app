@@ -83,25 +83,43 @@ export default function CampaignsPage() {
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from('campaigns')
-      .select(`
-        *,
-        memberships (
-          fundraiser_share,
-          profiles (
-            full_name
-          )
-        )
-      `)
-      .eq('organizer_id', userId)
-      .eq('status', view);
+    try {
+      // First, just get campaigns without memberships
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select('*')
+        .eq('organizer_id', userId)
+        .eq('status', view);
 
-    if (error) {
-      console.error('Full campaign fetch error:', JSON.stringify(error, null, 2));
+      if (error) {
+        console.error('Campaign fetch error:', error);
+        setCampaigns([]);
+      } else {
+        // For each campaign, fetch memberships separately
+        const campaignsWithMemberships = await Promise.all(
+          (data || []).map(async (campaign) => {
+            const { data: membershipData } = await supabase
+              .from('memberships')
+              .select(`
+                fundraiser_share,
+                profiles (
+                  full_name
+                )
+              `)
+              .eq('campaign_id', campaign.id);
+
+            return {
+              ...campaign,
+              memberships: membershipData || [],
+            };
+          })
+        );
+
+        setCampaigns(campaignsWithMemberships as Campaign[]);
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching campaigns:', err);
       setCampaigns([]);
-    } else {
-      setCampaigns(data as Campaign[]);
     }
 
     setLoading(false);
