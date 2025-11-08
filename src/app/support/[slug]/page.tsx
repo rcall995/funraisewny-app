@@ -134,13 +134,16 @@ export default function SupportPage() {
       const expiresAt = new Date();
       expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
+      // For FREE testing: fundraiser gets $15, platform gets $10 (would be from $25 payment)
+      const fundraiserShare = 15.00;
+
       const { error: membershipError } = await supabase
         .from('memberships')
         .insert({
           user_id: userId,
           campaign_id: campaign.id,
           expires_at: expiresAt.toISOString(),
-          status: 'active',
+          fundraiser_share: fundraiserShare,
         });
 
       if (membershipError) {
