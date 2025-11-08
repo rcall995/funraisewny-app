@@ -115,6 +115,22 @@ export default function SupportPage() {
         }
 
         userId = signUpData.user?.id;
+
+        // For new signups, we need to create the profile first
+        if (userId) {
+          const fullName = `${firstName.trim()} ${lastName.trim()}`;
+
+          // Insert profile (it may already exist from trigger, so we use upsert)
+          await supabase
+            .from('profiles')
+            .upsert({
+              id: userId,
+              full_name: fullName,
+              role: 'supporter',
+            }, {
+              onConflict: 'id'
+            });
+        }
       }
 
       if (!userId || !campaign?.id) {
@@ -123,12 +139,14 @@ export default function SupportPage() {
         return;
       }
 
-      // Update user's full name if provided
-      const fullName = `${firstName.trim()} ${lastName.trim()}`;
-      await supabase
-        .from('profiles')
-        .update({ full_name: fullName })
-        .eq('id', userId);
+      // Update user's full name if provided (for existing logged-in users)
+      if (user) {
+        const fullName = `${firstName.trim()} ${lastName.trim()}`;
+        await supabase
+          .from('profiles')
+          .update({ full_name: fullName })
+          .eq('id', userId);
+      }
 
       // Create FREE membership (expires in 1 year)
       const expiresAt = new Date();
