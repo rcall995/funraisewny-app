@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import useUser from '@/hooks/useUser';
 import BusinessProfileForm from '@/components/BusinessProfileForm'; 
 import Link from 'next/link';
@@ -9,7 +9,7 @@ export type BusinessProfile = { id: number; business_name: string; address: stri
 export type Deal = { id: number; title: string; description: string; status: string; approval_status: string; };
 
 export default function MerchantDashboard() {
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const { user, loading: userLoading, isBusinessOwner } = useUser();
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
   const [deals, setDeals] = useState<Deal[]>([]);

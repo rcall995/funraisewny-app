@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import useUser from '@/hooks/useUser';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import Image from 'next/image';
 
 type Campaign = { id: number; campaign_name: string; description: string; logo_url: string | null; slug: string; };
@@ -23,7 +23,7 @@ export default function SupportPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const router = useRouter();
   const params = useParams();
   const { user } = useUser();

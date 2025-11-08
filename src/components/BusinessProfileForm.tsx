@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useEffect, ChangeEvent } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import type { User } from '@supabase/supabase-js';
 import Image from 'next/image';
 
@@ -22,7 +22,7 @@ type BusinessProfileFormProps = {
 };
 
 export default function BusinessProfileForm({ user, onSave, initialData }: BusinessProfileFormProps) {
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const [businessName, setBusinessName] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import Link from 'next/link';
 import useUser from '@/hooks/useUser';
 
@@ -20,7 +20,7 @@ type Deal = {
 }
 
 export default function EditDealPage() {
-    const supabase = createClientComponentClient();
+    const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
     const router = useRouter();
     const params = useParams();
     // FIX: Renamed to use isBusinessOwner

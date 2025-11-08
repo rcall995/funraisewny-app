@@ -1,14 +1,14 @@
 'use client';
 import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import Link from 'next/link';
 import useUser from '@/hooks/useUser';
 
 const DEAL_CATEGORIES = [ 'Food & Drink', 'Retail & Shopping', 'Health & Wellness', 'Entertainment & Activities', 'Services', 'Automotive', 'Other' ];
 
 export default function NewDealPage() {
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const router = useRouter();
   const { user } = useUser();
   const [title, setTitle] = useState('');

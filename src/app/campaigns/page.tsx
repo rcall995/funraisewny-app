@@ -5,7 +5,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import useUser from '@/hooks/useUser';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 
 // --- Type Definitions ---
@@ -78,7 +78,7 @@ export default function CampaignsPage() {
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<{ [key: number]: string }>({});
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
   const fetchCampaigns = useCallback(async (userId: string) => {
     setLoading(true);

@@ -2,14 +2,37 @@
 
 'use server';
 
-import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 export async function signIn(formData: FormData) {
   const email = String(formData.get('email'));
   const password = String(formData.get('password'));
-  const supabase = createServerActionClient({ cookies });
+  const cookieStore = await cookies();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+      },
+    }
+  );
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
@@ -23,7 +46,7 @@ export async function signIn(formData: FormData) {
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
   const role = profile?.role;
-  
+
   if (role === 'business') redirect('/merchant');
   else if (role === 'fundraiser') redirect('/campaigns');
   else redirect('/dashboard');
@@ -35,7 +58,30 @@ export async function signUp(formData: FormData) {
   const password = String(formData.get('password'));
   const fullName = String(formData.get('fullName'));
   const role = String(formData.get('role')) || 'supporter';
-  const supabase = createServerActionClient({ cookies });
+  const cookieStore = await cookies();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+      },
+    }
+  );
 
   // STEP 1: Create the user in the auth.users table
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({

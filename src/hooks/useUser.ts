@@ -3,7 +3,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import type { User } from '@supabase/supabase-js';
 
 type ProfileData = {
@@ -20,7 +20,10 @@ type UserProfile = {
 };
 
 export default function useUser(): UserProfile {
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ProfileData>(null);

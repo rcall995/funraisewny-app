@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'; // Added useRef
 import { useRouter, useParams } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import useUser from '@/hooks/useUser';
 import { v4 as uuidv4 } from 'uuid'; // For unique file names
 
@@ -14,7 +14,7 @@ import { v4 as uuidv4 } from 'uuid'; // For unique file names
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const EditCampaignPage: React.FC<any> = () => {
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const router = useRouter();
   const { user, loading: userLoading } = useUser();
   

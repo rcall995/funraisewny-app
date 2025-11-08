@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 
 type Deal = {
   id: number;
@@ -18,7 +18,7 @@ type DealFormProps = {
 };
 
 export default function DealForm({ businessId, onSave, onCancel, initialData }: DealFormProps) {
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [finePrint, setFinePrint] = useState('');

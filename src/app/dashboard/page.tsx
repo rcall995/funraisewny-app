@@ -6,7 +6,7 @@ import useUser from '@/hooks/useUser';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return 'N/A';
@@ -18,7 +18,10 @@ const formatDate = (dateString: string | null) => {
 export default function DashboardPage() {
     const { user, loading: userLoading, profile } = useUser();
     const router = useRouter();
-    const supabase = createClientComponentClient(); 
+    const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
     const [membership, setMembership] = useState<{ expires_at: string } | null>(null);
 
@@ -46,9 +49,9 @@ export default function DashboardPage() {
             // If loading is finished and there is still no user, then redirect.
             router.replace('/login');
         }
-        
+
         // If the user exists, fetch their membership data.
-        if (user) { 
+        if (user) {
             fetchMembershipData();
         }
     }, [user, userLoading, router, fetchMembershipData]); // Dependencies for the effect
