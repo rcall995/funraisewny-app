@@ -113,19 +113,39 @@ export default function CampaignsPage() {
       console.log('Fetching memberships for', data.length, 'campaigns');
       const campaignsWithMemberships = await Promise.all(
         data.map(async (campaign) => {
-          const { data: membershipData } = await supabase
+          // Fetch memberships without the join first
+          const { data: membershipData, error: membershipError } = await supabase
             .from('memberships')
-            .select(`
-              fundraiser_share,
-              profiles (
-                full_name
-              )
-            `)
+            .select('user_id, fundraiser_share')
             .eq('campaign_id', campaign.id);
+
+          if (membershipError) {
+            console.error('Error fetching memberships:', membershipError);
+            return {
+              ...campaign,
+              memberships: [],
+            };
+          }
+
+          // Now fetch profile names separately
+          const membershipsWithProfiles = await Promise.all(
+            (membershipData || []).map(async (membership) => {
+              const { data: profileData } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', membership.user_id)
+                .single();
+
+              return {
+                fundraiser_share: membership.fundraiser_share,
+                profiles: profileData ? { full_name: profileData.full_name } : null,
+              };
+            })
+          );
 
           return {
             ...campaign,
-            memberships: membershipData || [],
+            memberships: membershipsWithProfiles,
           };
         })
       );
