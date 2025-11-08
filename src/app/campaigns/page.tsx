@@ -11,7 +11,9 @@ import { useRouter } from 'next/navigation';
 // --- Type Definitions ---
 type Membership = {
   fundraiser_share: number;
-  profile_full_name: string | null;
+  profiles: {
+    full_name: string | null;
+  } | null;
 };
 type Campaign = {
   id: number;
@@ -21,7 +23,7 @@ type Campaign = {
   start_date: string | null;
   end_date: string | null;
   status: string;
-  membership_profiles_view: Membership[];
+  memberships: Membership[];
 };
 
 // --- Feather Icon Components ---
@@ -85,9 +87,11 @@ export default function CampaignsPage() {
       .from('campaigns')
       .select(`
         *,
-        membership_profiles_view (
+        memberships (
           fundraiser_share,
-          profile_full_name
+          profiles (
+            full_name
+          )
         )
       `)
       .eq('organizer_id', userId)
@@ -210,7 +214,7 @@ export default function CampaignsPage() {
         ) : (
           <div className="space-y-6">
             {campaigns.map((campaign) => {
-              const members = campaign.membership_profiles_view || [];
+              const members = campaign.memberships || [];
               const totalMembers = members.length;
               const totalRevenue = members.reduce((sum, m) => sum + (m.fundraiser_share || 0), 0);
 
@@ -296,7 +300,7 @@ export default function CampaignsPage() {
                           {members.map((member, idx) => (
                             <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 rounded">
                               <span className="text-sm font-medium text-gray-700">
-                                {member.profile_full_name || 'Anonymous Supporter'}
+                                {member.profiles?.full_name || 'Anonymous Supporter'}
                               </span>
                               <span className="text-sm text-green-600 font-semibold">
                                 +${member.fundraiser_share?.toFixed(2) || '0.00'}
