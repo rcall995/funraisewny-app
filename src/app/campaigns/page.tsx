@@ -81,19 +81,15 @@ export default function CampaignsPage() {
   const supabase = createClientComponentClient();
 
   const fetchCampaigns = useCallback(async (userId: string) => {
-    console.log('fetchCampaigns called for user:', userId, 'view:', view);
     setLoading(true);
 
     try {
       // First, just get campaigns without memberships
-      console.log('Fetching campaigns from database...');
       const { data, error } = await supabase
         .from('campaigns')
         .select('*')
         .eq('organizer_id', userId)
         .eq('status', view);
-
-      console.log('Campaign query result - data:', data, 'error:', error);
 
       if (error) {
         console.error('Campaign fetch error:', error);
@@ -103,14 +99,12 @@ export default function CampaignsPage() {
       }
 
       if (!data || data.length === 0) {
-        console.log('No campaigns found');
         setCampaigns([]);
         setLoading(false);
         return;
       }
 
       // For each campaign, fetch memberships separately
-      console.log('Fetching memberships for', data.length, 'campaigns');
       const campaignsWithMemberships = await Promise.all(
         data.map(async (campaign) => {
           // Fetch memberships without the join first
@@ -150,7 +144,6 @@ export default function CampaignsPage() {
         })
       );
 
-      console.log('Final campaigns with memberships:', campaignsWithMemberships);
       setCampaigns(campaignsWithMemberships as Campaign[]);
     } catch (err) {
       console.error('Unexpected error fetching campaigns:', err);
@@ -158,17 +151,12 @@ export default function CampaignsPage() {
     }
 
     setLoading(false);
-    console.log('fetchCampaigns completed');
   }, [supabase, view]);
 
   useEffect(() => {
-    console.log('useEffect triggered - user:', user, 'userLoading:', userLoading);
-
     if (user) {
-      console.log('Fetching campaigns for user:', user.id);
       fetchCampaigns(user.id);
     } else if (!userLoading) {
-      console.log('No user, stopping loading');
       setLoading(false);
     }
   }, [user, userLoading, view, fetchCampaigns]);
