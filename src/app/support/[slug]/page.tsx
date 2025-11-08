@@ -84,7 +84,78 @@ export default function SupportPage() {
   }, [slug, user, supabase, formatSupporterName]);
   
   const handlePurchase = async () => {
-    // ... This logic is correct and does not need to change
+    setProcessing(true);
+    setError('');
+
+    try {
+      let userId = user?.id;
+
+      // If no user is logged in, create a new account
+      if (!user) {
+        if (!email || !password || !firstName || !lastName) {
+          setError('Please fill in all fields');
+          setProcessing(false);
+          return;
+        }
+
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: `${firstName} ${lastName}`,
+            },
+          },
+        });
+
+        if (signUpError) {
+          setError(signUpError.message);
+          setProcessing(false);
+          return;
+        }
+
+        userId = signUpData.user?.id;
+      }
+
+      if (!userId || !campaign?.id) {
+        setError('Unable to process membership');
+        setProcessing(false);
+        return;
+      }
+
+      // Update user's full name if provided
+      const fullName = `${firstName.trim()} ${lastName.trim()}`;
+      await supabase
+        .from('profiles')
+        .update({ full_name: fullName })
+        .eq('id', userId);
+
+      // Create FREE membership (expires in 1 year)
+      const expiresAt = new Date();
+      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+      const { error: membershipError } = await supabase
+        .from('memberships')
+        .insert({
+          user_id: userId,
+          campaign_id: campaign.id,
+          expires_at: expiresAt.toISOString(),
+          status: 'active',
+        });
+
+      if (membershipError) {
+        setError('Error creating membership: ' + membershipError.message);
+        setProcessing(false);
+        return;
+      }
+
+      // Success! Redirect to thank you page or dashboard
+      router.push('/support/thank-you');
+    } catch (err) {
+      console.error('Purchase error:', err);
+      setError('An unexpected error occurred');
+      setProcessing(false);
+    }
   };
 
   if (loading) { return <div className="p-8 text-center">Loading campaign...</div>; }
@@ -102,12 +173,50 @@ export default function SupportPage() {
         
         <div className="bg-white p-8 rounded-lg shadow-xl border border-gray-100 mt-6">
           <h2 className="text-2xl font-semibold">Get Your FunraiseWNY Membership</h2>
-          <div className="my-6"><span className="text-5xl font-bold">$25</span><span className="text-gray-500">/ year</span></div>
+          <div className="my-6">
+            <span className="text-5xl font-bold line-through text-gray-400">$25</span>
+            <span className="text-5xl font-bold text-green-600 ml-4">FREE</span>
+            <span className="text-gray-500 block mt-2">Testing Period - Full Access for 1 Year</span>
+          </div>
 
           {!user && (
             <div className="mb-6 space-y-4 text-left">
               <h3 className="text-lg font-medium text-gray-700">Create Your Account to Continue</h3>
-              {/* ... sign up form inputs ... */}
+              <div className="flex space-x-4">
+                <input
+                  type="text"
+                  placeholder="First Name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Last Name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                required
+              />
+              <input
+                type="password"
+                placeholder="Password (min 6 characters)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                required
+                minLength={6}
+              />
             </div>
           )}
 
@@ -124,7 +233,7 @@ export default function SupportPage() {
           {error && <p className="text-red-500 text-sm text-left my-4">{error}</p>}
           
           <button onClick={handlePurchase} disabled={processing} className="w-full bg-green-600 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:bg-green-700 text-xl disabled:bg-gray-400">
-            {processing ? 'Processing...' : 'Purchase & Support'}
+            {processing ? 'Creating Your Membership...' : 'Get FREE Membership & Support'}
           </button>
         </div>
         
