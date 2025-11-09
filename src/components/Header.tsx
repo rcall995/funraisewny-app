@@ -49,6 +49,11 @@ export default function Header() {
               <Link href="/deals" className="text-gray-600 hover:text-blue-600">
                 Deals
               </Link>
+              {profile?.full_name && (
+                <span className="text-gray-700 font-semibold">
+                  {profile.full_name}
+                </span>
+              )}
               <SignOutButton />
             </>
           ) : (
