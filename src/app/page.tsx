@@ -45,9 +45,15 @@ export default function HomePage() {
               Partner My Business
             </Link>
           </div>
+          <p className="mt-6 text-gray-500 text-sm">
+            Already have an account?{' '}
+            <Link href="/login" className="text-blue-600 font-semibold hover:underline">
+              Log in here
+            </Link>
+          </p>
         </div>
       </section>
-      
+
       {/* "Why Partner With Us?" Section */}
       <section className="py-24 px-4">
         <div className="container mx-auto max-w-6xl">
