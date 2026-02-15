@@ -4,7 +4,6 @@
 
 import { useState, useEffect, ChangeEvent } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import type { User } from '@supabase/supabase-js';
 import Image from 'next/image';
 
 type BusinessProfile = {
@@ -16,12 +15,12 @@ type BusinessProfile = {
 } | null;
 
 type BusinessProfileFormProps = {
-  user: User;
+  userId: string;
   onSave: () => void;
   initialData: BusinessProfile;
 };
 
-export default function BusinessProfileForm({ user, onSave, initialData }: BusinessProfileFormProps) {
+export default function BusinessProfileForm({ userId, onSave, initialData }: BusinessProfileFormProps) {
   const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const [businessName, setBusinessName] = useState('');
   const [address, setAddress] = useState('');
@@ -66,7 +65,7 @@ export default function BusinessProfileForm({ user, onSave, initialData }: Busin
 
     if (logoFile) {
       const fileExt = logoFile.name.split('.').pop();
-      const filePath = `public/${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `public/${userId}-${Date.now()}.${fileExt}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('logos')
         .upload(filePath, logoFile);
@@ -86,7 +85,7 @@ export default function BusinessProfileForm({ user, onSave, initialData }: Busin
       address: address,
       phone: phone,
       logo_url: newLogoUrl,
-      owner_id: user.id,
+      owner_id: userId,
     };
 
     const { error: dbError } = initialData
