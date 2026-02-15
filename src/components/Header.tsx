@@ -10,7 +10,7 @@ export default function Header() {
   const { user, loading, isBusinessOwner, isFundraiser, isAdmin, profile }: ReturnType<typeof useUser> = useUser()
   const pathname = usePathname()
 
-  if (pathname === '/login') {
+  if (pathname === '/' || pathname === '/login') {
     return null
   }
 
