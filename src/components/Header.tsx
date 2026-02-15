@@ -57,12 +57,23 @@ export default function Header() {
               <SignOutButton />
             </>
           ) : (
-            <Link
-              href="/login"
-              className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700"
-            >
-              Login
-            </Link>
+            <>
+              <Link href="/for-fundraisers" className="text-gray-600 hover:text-green-600">
+                Fundraisers
+              </Link>
+              <Link href="/for-businesses" className="text-gray-600 hover:text-blue-600">
+                Businesses
+              </Link>
+              <Link href="/support" className="text-gray-600 hover:text-blue-600">
+                Support a Group
+              </Link>
+              <Link
+                href="/login"
+                className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700"
+              >
+                Login
+              </Link>
+            </>
           )}
         </div>
       </nav>

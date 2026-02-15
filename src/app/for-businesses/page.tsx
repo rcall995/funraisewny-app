@@ -17,7 +17,7 @@ export default function ForBusinessesPage() {
           </p>
 
           <Link
-            href="/login?view=sign_up&role=business&redirect_to=/businesses"
+            href="/login?view=sign_up&role=business&redirect_to=/merchant"
             className="mt-8 inline-block px-10 py-4 bg-white text-blue-600 font-bold rounded-lg shadow-2xl hover:bg-gray-100 transition duration-300 text-lg"
           >
             Get Your Business Featured (It&apos;s Free)
@@ -82,7 +82,7 @@ export default function ForBusinessesPage() {
         </p>
 
         <Link
-          href="/login?view=sign_up&role=business&redirect_to=/businesses"
+          href="/login?view=sign_up&role=business&redirect_to=/merchant"
           className="px-10 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-xl hover:bg-blue-700 transition duration-300 text-lg inline-block"
         >
           Create Your Free Business Profile
