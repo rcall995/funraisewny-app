@@ -2,19 +2,27 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import useUser from '@/hooks/useUser'
 import SignOutButton from '@/components/SignOutButton'
 import { usePathname } from 'next/navigation'
 
-export default function Header() {
-  const { user, loading, isBusinessOwner, isFundraiser, isAdmin, profile }: ReturnType<typeof useUser> = useUser()
+type AuthState = {
+  email: string;
+  role: string | null;
+  fullName: string | null;
+} | null;
+
+export default function Header({ authState }: { authState: AuthState }) {
   const pathname = usePathname()
 
   if (pathname === '/' || pathname === '/login') {
     return null
   }
 
-  const isSupporter = profile?.role === 'supporter';
+  const isLoggedIn = authState !== null;
+  const isAdmin = authState?.role === 'admin';
+  const isBusinessOwner = authState?.role === 'business';
+  const isFundraiser = authState?.role === 'fundraiser';
+  const isSupporter = authState?.role === 'supporter';
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -29,7 +37,7 @@ export default function Header() {
           />
         </Link>
         <div className="flex items-center space-x-4 font-medium text-sm">
-          {!loading && user ? (
+          {isLoggedIn ? (
             <>
               {isAdmin && (
                 <Link href="/admin" className="text-gray-600 hover:text-blue-600">
@@ -54,9 +62,9 @@ export default function Header() {
               <Link href="/deals" className="text-gray-600 hover:text-blue-600">
                 Deals
               </Link>
-              {profile?.full_name && (
+              {authState?.fullName && (
                 <span className="text-gray-700 font-semibold">
-                  {profile.full_name}
+                  {authState.fullName}
                 </span>
               )}
               <SignOutButton />
