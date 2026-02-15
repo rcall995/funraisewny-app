@@ -29,7 +29,7 @@ export default function Header() {
           />
         </Link>
         <div className="flex items-center space-x-4 font-medium text-sm">
-          {user ? (
+          {loading ? null : user ? (
             <>
               {isAdmin && (
                 <Link href="/admin" className="text-gray-600 hover:text-blue-600">
