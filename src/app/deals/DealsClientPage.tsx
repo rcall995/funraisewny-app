@@ -42,7 +42,7 @@ const QuickViewModal = ({ deal, isOpen, onClose }: { deal: Deal | null; isOpen: 
   );
 };
 
-export default function DealsClientPage({ initialDeals }: { initialDeals: Deal[]; initialFeatured: Deal[]; }) {
+export default function DealsClientPage({ initialDeals, expiresAt }: { initialDeals: Deal[]; initialFeatured: Deal[]; expiresAt: string | null; }) {
   const [deals, setDeals] = useState(initialDeals);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const handleCategoryChange = (cat: string) => { if (!cat) { setDeals(initialDeals); } else { setDeals(initialDeals.filter((d) => d.category === cat)); } };
@@ -54,6 +54,14 @@ export default function DealsClientPage({ initialDeals }: { initialDeals: Deal[]
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4">Exclusive Member Deals</h1>
           <p className="text-lg text-gray-600">Your year of savings in Western New York starts here.</p>
+          {expiresAt && (
+            <p className="text-sm text-gray-500 mt-2">
+              Membership valid until{' '}
+              <span className="font-semibold text-gray-700">
+                {new Date(expiresAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}
+              </span>
+            </p>
+          )}
         </motion.div>
         <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
             <div className="relative">

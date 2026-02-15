@@ -46,14 +46,15 @@ async function getServerDeals() {
   }
   
   const deals = (data as Deal[]) || [];
-  const { data: membership, count } = await supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('user_id', user.id).gte('expires_at', new Date().toISOString());
-  const isMember = (count ?? 0) > 0;
+  const { data: membershipData } = await supabase.from('memberships').select('expires_at').eq('user_id', user.id).gte('expires_at', new Date().toISOString()).order('expires_at', { ascending: false }).limit(1);
+  const isMember = (membershipData?.length ?? 0) > 0;
+  const expiresAt = membershipData?.[0]?.expires_at ?? null;
 
-  return { deals, isMember, featured: deals.slice(0, 5) };
+  return { deals, isMember, expiresAt, featured: deals.slice(0, 5) };
 }
 
 export default async function DealsPage() {
-  const { deals, isMember, featured } = await getServerDeals();
+  const { deals, isMember, expiresAt, featured } = await getServerDeals();
   if (!isMember) {
     return (
       <main className="bg-gray-50 min-h-screen py-12 px-4 flex items-center justify-center">
@@ -65,5 +66,5 @@ export default async function DealsPage() {
       </main>
     );
   }
-  return ( <DealsClientPage initialDeals={deals} initialFeatured={featured} /> );
+  return ( <DealsClientPage initialDeals={deals} initialFeatured={featured} expiresAt={expiresAt} /> );
 }
