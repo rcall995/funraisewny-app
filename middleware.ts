@@ -8,6 +8,7 @@ const roleRedirects: { [key: string]: string } = {
   supporter: '/dashboard',
   fundraiser: '/campaigns',
   business: '/merchant',
+  admin: '/admin',
 };
 
 export async function middleware(request: NextRequest) {
@@ -70,5 +71,7 @@ export const config = {
     '/dashboard',
     '/campaigns',
     '/merchant',
+    '/admin',
+    '/admin/:path*',
   ],
 };

@@ -17,6 +17,7 @@ type UserProfile = {
   loading: boolean;
   isBusinessOwner: boolean;
   isFundraiser: boolean;
+  isAdmin: boolean;
 };
 
 export default function useUser(): UserProfile {
@@ -84,5 +85,6 @@ export default function useUser(): UserProfile {
     loading,
     isBusinessOwner: profile?.role === 'business',
     isFundraiser: profile?.role === 'fundraiser',
+    isAdmin: profile?.role === 'admin',
   };
 }

@@ -7,7 +7,7 @@ import SignOutButton from '@/components/SignOutButton'
 import { usePathname } from 'next/navigation'
 
 export default function Header() {
-  const { user, loading, isBusinessOwner, isFundraiser, profile }: ReturnType<typeof useUser> = useUser()
+  const { user, loading, isBusinessOwner, isFundraiser, isAdmin, profile }: ReturnType<typeof useUser> = useUser()
   const pathname = usePathname()
 
   if (pathname === '/login') {
@@ -31,6 +31,11 @@ export default function Header() {
         <div className="flex items-center space-x-4 font-medium text-sm">
           {user ? (
             <>
+              {isAdmin && (
+                <Link href="/admin" className="text-gray-600 hover:text-blue-600">
+                  Admin Panel
+                </Link>
+              )}
               {isBusinessOwner && (
                 <Link href="/merchant" className="text-gray-600 hover:text-blue-600">
                   Business Portal

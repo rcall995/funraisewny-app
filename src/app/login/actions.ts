@@ -47,7 +47,8 @@ export async function signIn(formData: FormData) {
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
   const role = profile?.role;
 
-  if (role === 'business') redirect('/merchant');
+  if (role === 'admin') redirect('/admin');
+  else if (role === 'business') redirect('/merchant');
   else if (role === 'fundraiser') redirect('/campaigns');
   else redirect('/dashboard');
 }
